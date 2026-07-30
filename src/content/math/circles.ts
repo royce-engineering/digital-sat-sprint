@@ -1,0 +1,2 @@
+import { buildMathCourse } from "./courseFactory";
+export const course=buildMathCourse({"id": "circles", "title": "Circles", "subtitle": "Connect radius, angles, arcs, and area.", "description": "Solve circumference, area, arc, sector, and angle problems.", "domain": "Geometry & Trigonometry", "skills": ["Circumference and Area", "Arcs", "Sectors", "Circle Equations"], "formulas": ["C=2\u03c0r", "A=\u03c0r\u00b2", "arc length=(\u03b8/360)2\u03c0r", "(x\u2212h)\u00b2+(y\u2212k)\u00b2=r\u00b2"], "nextCourseId": "area-volume"});

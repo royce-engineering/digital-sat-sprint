@@ -1,0 +1,2 @@
+import { buildMathCourse } from "./courseFactory";
+export const course=buildMathCourse({"id": "data-statistics", "title": "Data & Statistics", "subtitle": "Read distributions and summarize data.", "description": "Analyze center, spread, tables, histograms, and box plots.", "domain": "Problem Solving & Data Analysis", "skills": ["Mean and Median", "Range and IQR", "Data Displays", "Sampling and Inference"], "formulas": ["mean = sum/n", "range = max \u2212 min", "IQR = Q3 \u2212 Q1", "estimate = sample proportion \u00d7 population"], "nextCourseId": "probability"});

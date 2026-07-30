@@ -1,0 +1,2 @@
+import { buildMathCourse } from "./courseFactory";
+export const course=buildMathCourse({"id": "probability", "title": "Probability", "subtitle": "Count outcomes and interpret chance.", "description": "Solve basic, compound, conditional, and expected-value questions.", "domain": "Problem Solving & Data Analysis", "skills": ["Basic Probability", "Complements", "Conditional Probability", "Expected Value"], "formulas": ["P(A)=favorable/total", "P(not A)=1\u2212P(A)", "P(A|B)=P(A and B)/P(B)", "EV=\u03a3(value \u00d7 probability)"], "nextCourseId": "two-variable-data"});

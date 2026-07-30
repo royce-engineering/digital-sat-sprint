@@ -1,0 +1,2 @@
+import { buildMathCourse } from "./courseFactory";
+export const course=buildMathCourse({"id": "trigonometry", "title": "Right Triangles & Trigonometry", "subtitle": "Model sides and angles.", "description": "Use special triangles, sine, cosine, tangent, and inverse trig.", "domain": "Geometry & Trigonometry", "skills": ["Pythagorean Theorem", "Special Triangles", "Trigonometric Ratios", "Angles of Elevation"], "formulas": ["a\u00b2+b\u00b2=c\u00b2", "45-45-90: x,x,x\u221a2", "sin \u03b8=opposite/hypotenuse", "tan \u03b8=opposite/adjacent"], "nextCourseId": null});
