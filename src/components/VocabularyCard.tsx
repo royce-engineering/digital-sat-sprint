@@ -35,19 +35,19 @@ export default function VocabularyCard({
             wordIndex={number - 1}
             lessonTitle={lessonTitle}
             word={item.word}
-            partOfSpeech={item.partOfSpeech}
+            partOfSpeech={item.partOfSpeech ?? "word"}
             definition={item.definition}
             example={item.example}
             synonyms={item.synonyms}
             compact
           />
-        <span
-          className="rating"
-          aria-label={`${item.rating} out of 5 importance rating`}
-        >
-          {"★".repeat(item.rating)}
-          {"☆".repeat(5 - item.rating)}
-        </span>
+          <span
+            className="rating"
+            aria-label={`${item.rating} out of 5 importance rating`}
+          >
+            {"★".repeat(item.rating)}
+            {"☆".repeat(5 - item.rating)}
+          </span>
         </div>
       </div>
 
@@ -86,14 +86,19 @@ export default function VocabularyCard({
           {item.wordFamily?.length ? (
             <>
               <p className="label">Word Family</p>
-              <p className="value compactValue">{item.wordFamily.join(" • ")}</p>
+              <p className="value compactValue">
+                {item.wordFamily.join(" • ")}
+              </p>
             </>
           ) : null}
 
           <p className="label">SAT Profile</p>
           <div className="tagList">
             <span className="tag tagSoft">{item.difficulty || "Core"}</span>
-            <span className="tag tagSoft">{item.frequency || (item.rating === 5 ? "High" : "Medium")} frequency</span>
+            <span className="tag tagSoft">
+              {item.frequency || (item.rating === 5 ? "High" : "Medium")}{" "}
+              frequency
+            </span>
           </div>
 
           {item.root ? (
@@ -108,7 +113,9 @@ export default function VocabularyCard({
               <p className="label">Antonyms</p>
               <div className="tagList">
                 {item.antonyms.map((antonym, index) => (
-                  <span className="tag" key={`${item.word}-antonym-${index}`}>{antonym}</span>
+                  <span className="tag" key={`${item.word}-antonym-${index}`}>
+                    {antonym}
+                  </span>
                 ))}
               </div>
             </>

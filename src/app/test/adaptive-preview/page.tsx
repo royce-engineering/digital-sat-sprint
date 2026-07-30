@@ -1,6 +1,10 @@
 import { selectReadingModule } from "@/lib/adaptive/selectModule";
 
 export default function AdaptivePreviewPage() {
+  const module1Questions = selectReadingModule({
+    module: 1,
+    seed: 12345,
+  });
   const questions = selectReadingModule({
     module: 2,
     seed: 67890,

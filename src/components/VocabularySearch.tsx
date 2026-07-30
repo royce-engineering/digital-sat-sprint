@@ -55,7 +55,8 @@ export default function VocabularySearch({
   );
 
   const partOfSpeechOptions = useMemo(
-    () => Array.from(new Set(entries.map((entry) => entry.partOfSpeech))).sort(),
+    () =>
+      Array.from(new Set(entries.map((entry) => entry.partOfSpeech))).sort(),
     [entries],
   );
 
@@ -81,10 +82,10 @@ export default function VocabularySearch({
         entry.word,
         entry.definition,
         entry.example,
-        entry.partOfSpeech,
+        entry.partOfSpeech ?? "",
         entry.synonyms.join(" "),
-        entry.collocations.join(" "),
-        entry.wordFamily.join(" "),
+        (entry.collocations ?? []).join(" "),
+        (entry.wordFamily ?? []).join(" "),
         entry.satTip ?? "",
         entry.lessonTitle,
       ]
@@ -109,8 +110,12 @@ export default function VocabularySearch({
 
         if (firstExact !== secondExact) return firstExact ? -1 : 1;
 
-        const firstStarts = first.word.toLowerCase().startsWith(normalizedQuery);
-        const secondStarts = second.word.toLowerCase().startsWith(normalizedQuery);
+        const firstStarts = first.word
+          .toLowerCase()
+          .startsWith(normalizedQuery);
+        const secondStarts = second.word
+          .toLowerCase()
+          .startsWith(normalizedQuery);
 
         if (firstStarts !== secondStarts) return firstStarts ? -1 : 1;
       }
@@ -119,7 +124,9 @@ export default function VocabularySearch({
     });
   }, [entries, query, selectedDay, selectedPartOfSpeech, sortMode]);
 
-  const visibleEntries = compact ? filteredEntries.slice(0, 6) : filteredEntries;
+  const visibleEntries = compact
+    ? filteredEntries.slice(0, 6)
+    : filteredEntries;
 
   function clearFilters() {
     setQuery("");
@@ -129,10 +136,14 @@ export default function VocabularySearch({
   }
 
   return (
-    <section className={`vocabularySearch ${compact ? "vocabularySearchCompact" : ""}`}>
+    <section
+      className={`vocabularySearch ${compact ? "vocabularySearchCompact" : ""}`}
+    >
       <div className="searchControlPanel">
         <div className="searchInputWrap">
-          <span className="searchInputIcon" aria-hidden="true">⌕</span>
+          <span className="searchInputIcon" aria-hidden="true">
+            ⌕
+          </span>
           <input
             type="search"
             value={query}
@@ -173,7 +184,9 @@ export default function VocabularySearch({
               <span>Part of speech</span>
               <select
                 value={selectedPartOfSpeech}
-                onChange={(event) => setSelectedPartOfSpeech(event.target.value)}
+                onChange={(event) =>
+                  setSelectedPartOfSpeech(event.target.value)
+                }
               >
                 <option value="all">All parts of speech</option>
                 {partOfSpeechOptions.map((partOfSpeech) => (
@@ -196,7 +209,11 @@ export default function VocabularySearch({
               </select>
             </label>
 
-            <button className="button searchResetButton" type="button" onClick={clearFilters}>
+            <button
+              className="button searchResetButton"
+              type="button"
+              onClick={clearFilters}
+            >
               Reset filters
             </button>
           </div>
@@ -209,7 +226,9 @@ export default function VocabularySearch({
           <span>{filteredEntries.length === 1 ? " result" : " results"}</span>
         </div>
         {query ? (
-          <p>Matching <strong>“{query}”</strong></p>
+          <p>
+            Matching <strong>“{query}”</strong>
+          </p>
         ) : (
           <p>Browse the complete vocabulary library.</p>
         )}
@@ -218,20 +237,25 @@ export default function VocabularySearch({
       {visibleEntries.length ? (
         <div className="searchResultGrid">
           {visibleEntries.map((entry) => (
-            <article className="searchResultCard" key={`${entry.day}-${entry.word}`}>
+            <article
+              className="searchResultCard"
+              key={`${entry.day}-${entry.word}`}
+            >
               <div className="searchResultTop">
                 <div>
                   <span className="searchLessonBadge">Day {entry.day}</span>
                   <span className="searchPartBadge">{entry.partOfSpeech}</span>
                 </div>
                 <div className="searchCardActions">
-                  <span className="searchRating">{"★".repeat(entry.rating)}</span>
+                  <span className="searchRating">
+                    {"★".repeat(entry.rating)}
+                  </span>
                   <FavoriteButton
                     day={entry.day}
                     wordIndex={entry.wordIndex}
                     lessonTitle={entry.lessonTitle}
                     word={entry.word}
-                    partOfSpeech={entry.partOfSpeech}
+                    partOfSpeech={entry.partOfSpeech ?? "word"}
                     definition={entry.definition}
                     example={entry.example}
                     synonyms={entry.synonyms}
@@ -241,7 +265,9 @@ export default function VocabularySearch({
               </div>
 
               <h3>{highlight(entry.word, query)}</h3>
-              <p className="searchDefinition">{highlight(entry.definition, query)}</p>
+              <p className="searchDefinition">
+                {highlight(entry.definition, query)}
+              </p>
 
               <blockquote>“{highlight(entry.example, query)}”</blockquote>
 
@@ -264,8 +290,15 @@ export default function VocabularySearch({
         <div className="searchEmptyState">
           <span>⌕</span>
           <h3>No matching vocabulary</h3>
-          <p>Try a shorter keyword, another lesson, or a different part of speech.</p>
-          <button className="button buttonPrimary" type="button" onClick={clearFilters}>
+          <p>
+            Try a shorter keyword, another lesson, or a different part of
+            speech.
+          </p>
+          <button
+            className="button buttonPrimary"
+            type="button"
+            onClick={clearFilters}
+          >
             Clear search
           </button>
         </div>

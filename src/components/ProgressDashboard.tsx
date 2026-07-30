@@ -16,9 +16,7 @@ type ProgressDashboardProps = {
   lessons: SatDay[];
 };
 
-export default function ProgressDashboard({
-  lessons,
-}: ProgressDashboardProps) {
+export default function ProgressDashboard({ lessons }: ProgressDashboardProps) {
   const [progress, setProgress] = useState<LearningProgress | null>(null);
 
   useEffect(() => {
@@ -75,12 +73,15 @@ export default function ProgressDashboard({
     return <p>Loading progress...</p>;
   }
 
+  const currentProgress = progress;
+
   const nextLesson =
-    lessons.find((lesson) => !progress.completedDays.includes(lesson.day)) ??
-    lessons[lessons.length - 1];
+    lessons.find(
+      (lesson) => !currentProgress.completedDays.includes(lesson.day),
+    ) ?? lessons[lessons.length - 1];
 
   function toggleDay(day: number) {
-    if (progress.completedDays.includes(day)) {
+    if (currentProgress.completedDays.includes(day)) {
       markDayIncomplete(day);
     } else {
       markDayComplete(day);
@@ -98,7 +99,9 @@ export default function ProgressDashboard({
           <span className="progressStatIcon">▤</span>
           <div>
             <span>Completed lessons</span>
-            <strong>{progress.completedDays.length} / {lessons.length}</strong>
+            <strong>
+              {currentProgress.completedDays.length} / {lessons.length}
+            </strong>
           </div>
         </article>
 
@@ -135,7 +138,8 @@ export default function ProgressDashboard({
             <div>
               <p className="sectionKicker">Course completion</p>
               <h2>
-                {progress.completedDays.length} of {lessons.length} available days
+                {currentProgress.completedDays.length} of {lessons.length}{" "}
+                available days
               </h2>
             </div>
             <strong>
@@ -150,7 +154,7 @@ export default function ProgressDashboard({
             <span
               style={{
                 width: `${Math.round(
-                  (progress.completedDays.length / lessons.length) * 100,
+                  (currentProgress.completedDays.length / lessons.length) * 100,
                 )}%`,
               }}
             />
@@ -184,16 +188,19 @@ export default function ProgressDashboard({
               <p className="sectionKicker">Lesson checklist</p>
               <h2>Available course days</h2>
               <p>
-                Mark a lesson complete after studying its vocabulary and practice.
+                Mark a lesson complete after studying its vocabulary and
+                practice.
               </p>
             </div>
           </div>
 
           <div className="progressLessonList">
             {lessons.map((lesson) => {
-              const completed = progress.completedDays.includes(lesson.day);
-              const quiz = progress.quizResults[String(lesson.day)];
-              const flashcards = progress.flashcards[String(lesson.day)];
+              const completed = currentProgress.completedDays.includes(
+                lesson.day,
+              );
+              const quiz = currentProgress.quizResults[String(lesson.day)];
+              const flashcards = currentProgress.flashcards[String(lesson.day)];
 
               return (
                 <article
@@ -256,7 +263,7 @@ export default function ProgressDashboard({
             </div>
 
             <div className="streakStat">
-              <strong>{progress.studyDates.length}</strong>
+              <strong>{currentProgress.studyDates.length}</strong>
               <span>Active study days</span>
             </div>
           </article>
@@ -273,9 +280,7 @@ export default function ProgressDashboard({
               <div>
                 <span>Average score</span>
                 <strong>
-                  {statistics.quizzesTaken
-                    ? `${statistics.quizAverage}%`
-                    : "—"}
+                  {statistics.quizzesTaken ? `${statistics.quizAverage}%` : "—"}
                 </strong>
               </div>
               <div>
