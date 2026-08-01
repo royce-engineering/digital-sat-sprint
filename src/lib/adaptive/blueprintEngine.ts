@@ -4,8 +4,12 @@ import type {
   ReadingModule,
   ReadingPassageType,
 } from "./types";
-
 import type { ReadingBlueprintSlot } from "./readingModuleBlueprint";
+import { toExamId } from "./identifiers";
+import {
+  createSeededRandom,
+  shuffleWithRandom,
+} from "./core/random";
 
 export interface ReadingSelectionRequest {
   count: number;
@@ -26,52 +30,39 @@ export interface BuildReadingModuleOptions {
   module?: ReadingModule;
 }
 
-function createSeededRandom(seed: number): () => number {
-  let state = seed >>> 0;
-
-  return () => {
-    state += 0x6d2b79f5;
-
-    let value = state;
-
-    value = Math.imul(value ^ (value >>> 15), value | 1);
-    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
-
-    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function shuffle<T>(items: T[], random: () => number): T[] {
-  const copy = [...items];
-
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(random() * (index + 1));
-
-    [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
-  }
-
-  return copy;
-}
-
-function getDomain(question: ExamQuestion): ReadingDomain | undefined {
+function getDomain(
+  question: ExamQuestion,
+): ReadingDomain | undefined {
   return question.blueprint?.domain ?? question.domain;
 }
 
-function getSkill(question: ExamQuestion): string | undefined {
+function getSkill(
+  question: ExamQuestion,
+): string | undefined {
   return question.blueprint?.skill ?? question.skill;
 }
 
 function getPassageType(
   question: ExamQuestion,
 ): ReadingPassageType | undefined {
-  return question.blueprint?.passageType ?? question.passageType;
+  return (
+    question.blueprint?.passageType ??
+    question.passageType
+  );
 }
 
-function getDifficulty(question: ExamQuestion): "Easy" | "Medium" | "Hard" {
-  return question.blueprint?.difficulty ?? question.difficulty;
+function getDifficulty(
+  question: ExamQuestion,
+): "Easy" | "Medium" | "Hard" {
+  return (
+    question.blueprint?.difficulty ??
+    question.difficulty
+  );
 }
 
-function getModule(question: ExamQuestion): ReadingModule | undefined {
+function getModule(
+  question: ExamQuestion,
+): ReadingModule | undefined {
   return question.blueprint?.module;
 }
 
@@ -79,20 +70,23 @@ export function selectReadingQuestions(
   bank: ExamQuestion[],
   request: ReadingSelectionRequest,
 ): ExamQuestion[] {
-  const excluded = new Set(request.excludeIds ?? []);
+  const excluded = new Set(
+    (request.excludeIds ?? []).map(toExamId),
+  );
 
   const eligible = bank.filter((question) => {
-    if (excluded.has(question.id)) {
+    if (excluded.has(question.examId)) {
       return false;
     }
 
     const questionModule = getModule(question);
     const questionSkill = getSkill(question);
-    const questionPassageType = getPassageType(question);
+    const questionPassageType =
+      getPassageType(question);
 
     /*
      * Questions without blueprint.module remain eligible.
-     * This preserves compatibility with your older banks.
+     * This preserves compatibility with older banks.
      */
     if (
       request.module !== undefined &&
@@ -109,13 +103,17 @@ export function selectReadingQuestions(
       return false;
     }
 
-    if (request.skill !== undefined && questionSkill !== request.skill) {
+    if (
+      request.skill !== undefined &&
+      questionSkill !== request.skill
+    ) {
       return false;
     }
 
     if (
       request.skills?.length &&
-      (!questionSkill || !request.skills.includes(questionSkill))
+      (!questionSkill ||
+        !request.skills.includes(questionSkill))
     ) {
       return false;
     }
@@ -130,7 +128,9 @@ export function selectReadingQuestions(
     if (
       request.passageTypes?.length &&
       (!questionPassageType ||
-        !request.passageTypes.includes(questionPassageType))
+        !request.passageTypes.includes(
+          questionPassageType,
+        ))
     ) {
       return false;
     }
@@ -145,9 +145,14 @@ export function selectReadingQuestions(
     return true;
   });
 
-  const random = createSeededRandom(request.seed ?? Date.now());
+  const random = createSeededRandom(
+    request.seed ?? Date.now(),
+  );
 
-  return shuffle(eligible, random).slice(0, request.count);
+  return shuffleWithRandom(
+    eligible,
+    random,
+  ).slice(0, request.count);
 }
 
 export function buildReadingModule(
@@ -156,29 +161,31 @@ export function buildReadingModule(
   options: BuildReadingModuleOptions = {},
 ): ExamQuestion[] {
   const selected: ExamQuestion[] = [];
-
-  const usedIds = new Set<string>(options.excludeIds ?? []);
-
+  const usedIds = new Set<string>(
+    (options.excludeIds ?? []).map(toExamId),
+  );
   const baseSeed = options.seed ?? Date.now();
 
   blueprint.forEach((slot, slotIndex) => {
-    const slotQuestions = selectReadingQuestions(bank, {
-      count: slot.count,
-      module: options.module,
-      domain: slot.domain,
-      skills: slot.skills,
-      passageTypes: slot.passageTypes,
-      difficulty: slot.difficulty,
-      excludeIds: [...usedIds],
+    const slotQuestions = selectReadingQuestions(
+      bank,
+      {
+        count: slot.count,
+        module: options.module,
+        domain: slot.domain,
+        skills: slot.skills,
+        passageTypes: slot.passageTypes,
+        difficulty: slot.difficulty,
+        excludeIds: [...usedIds],
 
-      // Each slot receives a deterministic,
-      // but different, seed.
-      seed: baseSeed + slotIndex,
-    });
+        // Preserve the pre-migration slot-seed rule exactly.
+        seed: baseSeed + slotIndex,
+      },
+    );
 
     for (const question of slotQuestions) {
       selected.push(question);
-      usedIds.add(question.id);
+      usedIds.add(question.examId);
     }
   });
 

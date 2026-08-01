@@ -91,7 +91,7 @@ export function buildReadingAdaptiveExam({
       module: 2,
       route: module1Result.route,
       seed: module2Seed,
-      exclude: module1.map((question) => question.id),
+      exclude: module1.map((question) => question.examId),
     });
 
     return {

@@ -26,11 +26,7 @@ export type ReadingPassageType =
   | "Academic"
   | "Government"
   | "Economics"
-  | "Humanities"
-  | "Government"
-  | "Literature"
-  | "Science"
-  | "Social Science";
+  | "Humanities";
 export type ReadingModule = 1 | 2;
 
 export type MathDomain =

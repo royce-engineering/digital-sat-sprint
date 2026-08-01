@@ -7,6 +7,9 @@ import {
   type AdaptiveExamRecord,
 } from "@/lib/adaptive/analytics/history";
 import {
+  accuracyByDifficulty,
+  accuracyByDomain,
+  accuracyBySkill,
   buildAnalyticsSummary,
   strongestGroups,
   weakestGroups,
@@ -18,8 +21,13 @@ import {
   type ScoreSeries,
   type ScoreTrendPoint,
 } from "@/lib/adaptive/analytics/trends";
+import type { ExamSection } from "@/lib/adaptive/types";
 
-type DashboardSeries = Extract<ScoreSeries, "readingWriting" | "math" | "total">;
+type DashboardView = "Overview" | "Reading & Writing" | "Math";
+type DashboardSeries = Extract<
+  ScoreSeries,
+  "readingWriting" | "math" | "total"
+>;
 
 const SERIES_LABELS: Record<DashboardSeries, string> = {
   readingWriting: "Reading & Writing",
@@ -31,42 +39,384 @@ function percent(value: number): string {
   return `${Math.round(value * 100)}%`;
 }
 
-function formatDuration(seconds: number): string {
-  const safe = Math.max(0, Math.round(seconds));
-  const hours = Math.floor(safe / 3600);
-  const minutes = Math.floor((safe % 3600) / 60);
-  const remainingSeconds = safe % 60;
-
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  if (minutes > 0) return `${minutes}m ${remainingSeconds}s`;
-  return `${remainingSeconds}s`;
-}
-
 function scoreText(value?: number): string {
   return typeof value === "number" ? String(value) : "—";
 }
 
-function scoreRange(record?: AdaptiveExamRecord): string {
-  if (!record) return "No completed attempt";
+function formatDuration(seconds: number): string {
+  const safe = Math.max(0, Math.round(seconds));
+  const hours = Math.floor(safe / 3600);
+  const minutes = Math.floor((safe % 3600) / 60);
 
-  if (typeof record.lowTotal === "number" && typeof record.highTotal === "number") {
-    return `${record.lowTotal}–${record.highTotal}`;
-  }
-
-  const section = record.readingWriting ?? record.math;
-  if (
-    section &&
-    typeof section.lowEstimate === "number" &&
-    typeof section.highEstimate === "number"
-  ) {
-    return `${section.lowEstimate}–${section.highEstimate}`;
-  }
-
-  return "Range unavailable";
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
 }
 
-function latestRecord(records: AdaptiveExamRecord[]): AdaptiveExamRecord | undefined {
-  return [...records].sort((a, b) => b.completedAt - a.completedAt)[0];
+function latestRecord(
+  records: AdaptiveExamRecord[],
+): AdaptiveExamRecord | undefined {
+  return [...records].sort(
+    (left, right) => right.completedAt - left.completedAt,
+  )[0];
+}
+
+function latestFullRecord(
+  records: AdaptiveExamRecord[],
+): AdaptiveExamRecord | undefined {
+  return [...records]
+    .filter((record) => record.readingWriting && record.math)
+    .sort((left, right) => right.completedAt - left.completedAt)[0];
+}
+
+function viewSection(
+  view: DashboardView,
+): ExamSection | undefined {
+  if (view === "Reading & Writing") return "Reading & Writing";
+  if (view === "Math") return "Math";
+  return undefined;
+}
+
+export default function UnifiedDashboardPage() {
+  const [records, setRecords] = useState<AdaptiveExamRecord[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [view, setView] = useState<DashboardView>("Overview");
+  const [series, setSeries] =
+    useState<DashboardSeries>("total");
+
+  useEffect(() => {
+    setRecords(loadExamHistory());
+    setLoaded(true);
+  }, []);
+
+  const section = viewSection(view);
+  const summary = useMemo(
+    () => buildAnalyticsSummary(records),
+    [records],
+  );
+
+  const domains = useMemo(
+    () => accuracyByDomain(records, section),
+    [records, section],
+  );
+  const skills = useMemo(
+    () => accuracyBySkill(records, section),
+    [records, section],
+  );
+  const difficulties = useMemo(
+    () => accuracyByDifficulty(records, section),
+    [records, section],
+  );
+
+  const trend = useMemo(
+    () => buildScoreTrend(records, series),
+    [records, series],
+  );
+  const trendSummary = useMemo(
+    () => summarizeTrend(records, series),
+    [records, series],
+  );
+
+  const latest = latestRecord(records);
+  const latestFull = latestFullRecord(records);
+  const strongest = strongestGroups(domains, 4);
+  const weakest = weakestGroups(skills, 6);
+
+  const selectedAccuracy =
+    view === "Reading & Writing"
+      ? summary.readingWriting
+      : view === "Math"
+        ? summary.math
+        : summary.overall;
+
+  if (!loaded) {
+    return (
+      <main className="mx-auto max-w-7xl p-8">
+        Loading analytics…
+      </main>
+    );
+  }
+
+  if (!records.length) {
+    return (
+      <main className="mx-auto max-w-4xl p-5 sm:p-8">
+        <section className="rounded-3xl border bg-white p-10 text-center shadow-sm">
+          <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">
+            Adaptive analytics
+          </p>
+          <h1 className="mt-3 text-3xl font-bold">
+            Complete a test to unlock your dashboard
+          </h1>
+          <p className="mx-auto mt-4 max-w-2xl leading-7 text-slate-600">
+            Reading, Math, and combined full-test history all feed the
+            same analytics layer.
+          </p>
+          <Link
+            href="/test/sat"
+            className="mt-7 inline-flex rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white hover:bg-blue-800"
+          >
+            Open Test Center
+          </Link>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main className="mx-auto max-w-7xl space-y-7 p-4 sm:p-8">
+      <section className="overflow-hidden rounded-3xl border bg-white shadow-sm">
+        <div className="bg-slate-950 px-7 py-9 text-white sm:px-10">
+          <div className="flex flex-wrap items-end justify-between gap-6">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-300">
+                Adaptive SAT analytics
+              </p>
+              <h1 className="mt-3 text-4xl font-bold tracking-tight">
+                Performance Dashboard
+              </h1>
+              <p className="mt-3 max-w-2xl text-slate-300">
+                One analytics view for Reading & Writing, Math, and
+                complete SAT attempts.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/test/history"
+                className="rounded-xl border border-white/25 px-5 py-3 font-semibold hover:bg-white/10"
+              >
+                Exam history
+              </Link>
+              <Link
+                href="/test/sat/full"
+                className="rounded-xl bg-blue-600 px-5 py-3 font-semibold hover:bg-blue-500"
+              >
+                Take full SAT
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-4 p-7 sm:grid-cols-2 lg:grid-cols-5 sm:p-10">
+          <MetricCard
+            label="Latest full score"
+            value={scoreText(latestFull?.bestTotal)}
+            detail={
+              latestFull
+                ? `Range ${latestFull.lowTotal}–${latestFull.highTotal}`
+                : "Complete both sections"
+            }
+          />
+          <MetricCard
+            label="Latest RW"
+            value={scoreText(
+              latest?.readingWriting?.score ??
+                latestFull?.readingWriting?.score,
+            )}
+            detail="Estimated section score"
+          />
+          <MetricCard
+            label="Latest Math"
+            value={scoreText(
+              latest?.math?.score ?? latestFull?.math?.score,
+            )}
+            detail="Estimated section score"
+          />
+          <MetricCard
+            label="Overall accuracy"
+            value={percent(summary.overall.accuracy)}
+            detail={`${summary.overall.correct}/${summary.overall.total} correct`}
+          />
+          <MetricCard
+            label="Attempts"
+            value={String(summary.attempts)}
+            detail={`${summary.completedQuestions} answered questions`}
+          />
+        </div>
+      </section>
+
+      <section className="flex flex-wrap gap-2 rounded-2xl border bg-white p-4 shadow-sm">
+        {(
+          ["Overview", "Reading & Writing", "Math"] as const
+        ).map((item) => (
+          <button
+            type="button"
+            key={item}
+            onClick={() => {
+              setView(item);
+              if (item === "Reading & Writing") {
+                setSeries("readingWriting");
+              } else if (item === "Math") {
+                setSeries("math");
+              }
+            }}
+            className={`rounded-full px-4 py-2 text-sm font-semibold ${
+              view === item
+                ? "bg-slate-950 text-white"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+            }`}
+          >
+            {item}
+          </button>
+        ))}
+      </section>
+
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          label={`${view} accuracy`}
+          value={percent(selectedAccuracy.accuracy)}
+          detail={`${selectedAccuracy.unanswered} unanswered`}
+        />
+        <MetricCard
+          label="Hard-route rate"
+          value={percent(summary.routes.hardRate)}
+          detail={`${summary.routes.hard} Hard · ${summary.routes.easy} Easy`}
+        />
+        <MetricCard
+          label="Flagged accuracy"
+          value={
+            summary.flagged.total
+              ? percent(summary.flagged.accuracy)
+              : "—"
+          }
+          detail={`${summary.flagged.total} flagged questions`}
+        />
+        <MetricCard
+          label="Average duration"
+          value={formatDuration(summary.averageDurationSeconds)}
+          detail="Across saved attempts"
+        />
+      </section>
+
+      <section className="rounded-3xl border bg-white p-6 shadow-sm sm:p-8">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">
+              Score progression
+            </p>
+            <h2 className="mt-1 text-2xl font-bold">
+              {SERIES_LABELS[series]} trend
+            </h2>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                "readingWriting",
+                "math",
+                "total",
+              ] as DashboardSeries[]
+            ).map((item) => (
+              <button
+                type="button"
+                key={item}
+                onClick={() => setSeries(item)}
+                className={`rounded-full px-4 py-2 text-sm font-semibold ${
+                  series === item
+                    ? "bg-blue-700 text-white"
+                    : "bg-slate-100 text-slate-700"
+                }`}
+              >
+                {SERIES_LABELS[item]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-7">
+          <TrendChart points={trend} />
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <SmallMetric
+            label="Latest"
+            value={scoreText(trendSummary.latest)}
+          />
+          <SmallMetric
+            label="Best"
+            value={scoreText(trendSummary.best)}
+          />
+          <SmallMetric
+            label="Average"
+            value={scoreText(trendSummary.average)}
+          />
+          <SmallMetric
+            label="Improvement"
+            value={
+              trendSummary.improvement !== undefined
+                ? signed(trendSummary.improvement)
+                : "—"
+            }
+          />
+          <SmallMetric
+            label="Consistency"
+            value={
+              trendSummary.consistency !== undefined
+                ? `±${trendSummary.consistency}`
+                : "—"
+            }
+          />
+        </div>
+      </section>
+
+      <section className="grid gap-7 xl:grid-cols-2">
+        <AccuracyPanel
+          title={`${view} domain performance`}
+          rows={domains}
+          emptyText="No domain data for this view."
+        />
+        <AccuracyPanel
+          title={`${view} difficulty performance`}
+          rows={difficulties}
+          emptyText="No difficulty data for this view."
+        />
+      </section>
+
+      <section className="grid gap-7 xl:grid-cols-2">
+        <RankedPanel
+          title="Strongest domains"
+          rows={strongest}
+          emptyText="Complete more questions to identify strengths."
+        />
+        <RankedPanel
+          title="Weakest skills"
+          rows={weakest}
+          emptyText="Complete more questions to identify weak skills."
+        />
+      </section>
+
+      <section className="rounded-3xl border bg-white p-6 shadow-sm sm:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold">Recommended next action</h2>
+            <p className="mt-2 text-slate-600">
+              Use your weakest Reading & Writing skills for targeted
+              practice, or begin another full test to strengthen the
+              score trend.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/test/practice/recommended"
+              className="rounded-xl border px-5 py-3 font-semibold hover:bg-slate-50"
+            >
+              Targeted practice
+            </Link>
+            <Link
+              href="/test/sat/full"
+              className="rounded-xl bg-blue-700 px-5 py-3 font-semibold text-white hover:bg-blue-800"
+            >
+              New full test
+            </Link>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function signed(value: number): string {
+  return value > 0 ? `+${value}` : String(value);
 }
 
 function MetricCard({
@@ -79,32 +429,122 @@ function MetricCard({
   detail: string;
 }) {
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <p className="text-sm font-medium text-slate-500">{label}</p>
-      <p className="mt-2 text-3xl font-bold tracking-tight text-slate-950">{value}</p>
+    <article className="rounded-2xl border bg-white p-5 shadow-sm">
+      <p className="text-sm text-slate-500">{label}</p>
+      <p className="mt-2 text-3xl font-bold">{value}</p>
       <p className="mt-2 text-sm text-slate-600">{detail}</p>
     </article>
   );
 }
 
+function SmallMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-xl border bg-slate-50 p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        {label}
+      </p>
+      <p className="mt-1 text-xl font-bold">{value}</p>
+    </div>
+  );
+}
+
+function AccuracyPanel({
+  title,
+  rows,
+  emptyText,
+}: {
+  title: string;
+  rows: GroupedAccuracy[];
+  emptyText: string;
+}) {
+  return (
+    <section className="rounded-3xl border bg-white p-6 shadow-sm sm:p-8">
+      <h2 className="text-xl font-bold">{title}</h2>
+
+      {rows.length ? (
+        <div className="mt-6 space-y-5">
+          {rows.map((row) => (
+            <AccuracyBar key={row.label} group={row} />
+          ))}
+        </div>
+      ) : (
+        <p className="mt-5 text-slate-500">{emptyText}</p>
+      )}
+    </section>
+  );
+}
+
+function RankedPanel({
+  title,
+  rows,
+  emptyText,
+}: {
+  title: string;
+  rows: GroupedAccuracy[];
+  emptyText: string;
+}) {
+  return (
+    <section className="rounded-3xl border bg-white p-6 shadow-sm sm:p-8">
+      <h2 className="text-xl font-bold">{title}</h2>
+
+      {rows.length ? (
+        <ol className="mt-5 space-y-3">
+          {rows.map((row, index) => (
+            <li
+              key={row.label}
+              className="flex items-center justify-between gap-4 rounded-xl border bg-slate-50 p-4"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-950 text-sm font-bold text-white">
+                  {index + 1}
+                </span>
+                <div>
+                  <p className="font-semibold">{row.label}</p>
+                  <p className="text-xs text-slate-500">
+                    {row.correct}/{row.total} correct
+                  </p>
+                </div>
+              </div>
+              <span className="font-bold">{percent(row.accuracy)}</span>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="mt-5 text-slate-500">{emptyText}</p>
+      )}
+    </section>
+  );
+}
+
 function AccuracyBar({ group }: { group: GroupedAccuracy }) {
-  const width = Math.max(0, Math.min(100, Math.round(group.accuracy * 100)));
+  const width = Math.max(
+    0,
+    Math.min(100, Math.round(group.accuracy * 100)),
+  );
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-start justify-between gap-4 text-sm">
+    <div>
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="font-medium text-slate-900">{group.label}</p>
+          <p className="font-medium">{group.label}</p>
           <p className="text-xs text-slate-500">
             {group.correct}/{group.total} correct
-            {group.unanswered > 0 ? ` · ${group.unanswered} unanswered` : ""}
+            {group.unanswered
+              ? ` · ${group.unanswered} unanswered`
+              : ""}
           </p>
         </div>
-        <span className="font-semibold text-slate-900">{percent(group.accuracy)}</span>
+        <span className="font-bold">{percent(group.accuracy)}</span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
         <div
-          className="h-full rounded-full bg-slate-900 transition-all"
+          className="h-full rounded-full bg-blue-700"
           style={{ width: `${width}%` }}
         />
       </div>
@@ -115,17 +555,21 @@ function AccuracyBar({ group }: { group: GroupedAccuracy }) {
 function TrendChart({ points }: { points: ScoreTrendPoint[] }) {
   if (!points.length) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 text-center text-sm text-slate-500">
-        Complete an exam to create a score trend.
+      <div className="flex h-64 items-center justify-center rounded-2xl border border-dashed bg-slate-50 text-sm text-slate-500">
+        No scores are available for this series yet.
       </div>
     );
   }
 
   const width = 760;
   const height = 260;
-  const paddingX = 46;
-  const paddingY = 28;
-  const values = points.flatMap((point) => [point.value, point.rollingAverage]);
+  const paddingX = 48;
+  const paddingY = 30;
+  const values = points.flatMap((point) => [
+    point.value,
+    point.rollingAverage,
+  ]);
+
   let min = Math.min(...values);
   let max = Math.max(...values);
 
@@ -133,29 +577,46 @@ function TrendChart({ points }: { points: ScoreTrendPoint[] }) {
     min -= 20;
     max += 20;
   } else {
-    const pad = Math.max(10, Math.round((max - min) * 0.15));
+    const pad = Math.max(
+      10,
+      Math.round((max - min) * 0.15),
+    );
     min -= pad;
     max += pad;
   }
 
-  const xFor = (index: number): number => {
-    if (points.length === 1) return width / 2;
-    return paddingX + (index / (points.length - 1)) * (width - paddingX * 2);
-  };
-  const yFor = (value: number): number =>
-    height - paddingY - ((value - min) / (max - min)) * (height - paddingY * 2);
+  const xFor = (index: number) =>
+    points.length === 1
+      ? width / 2
+      : paddingX +
+        (index / (points.length - 1)) *
+          (width - paddingX * 2);
+
+  const yFor = (value: number) =>
+    height -
+    paddingY -
+    ((value - min) / (max - min)) *
+      (height - paddingY * 2);
 
   const scorePath = points
-    .map((point, index) => `${index === 0 ? "M" : "L"} ${xFor(index)} ${yFor(point.value)}`)
-    .join(" ");
-  const rollingPath = points
     .map(
       (point, index) =>
-        `${index === 0 ? "M" : "L"} ${xFor(index)} ${yFor(point.rollingAverage)}`,
+        `${index === 0 ? "M" : "L"} ${xFor(index)} ${yFor(
+          point.value,
+        )}`,
     )
     .join(" ");
 
-  const gridValues = Array.from({ length: 5 }, (_, index) =>
+  const averagePath = points
+    .map(
+      (point, index) =>
+        `${index === 0 ? "M" : "L"} ${xFor(index)} ${yFor(
+          point.rollingAverage,
+        )}`,
+    )
+    .join(" ");
+
+  const grid = Array.from({ length: 5 }, (_, index) =>
     Math.round(max - (index / 4) * (max - min)),
   );
 
@@ -165,9 +626,9 @@ function TrendChart({ points }: { points: ScoreTrendPoint[] }) {
         viewBox={`0 0 ${width} ${height}`}
         className="h-64 min-w-[680px] w-full"
         role="img"
-        aria-label="Score trend chart"
+        aria-label="Score trend"
       >
-        {gridValues.map((value) => {
+        {grid.map((value) => {
           const y = yFor(value);
           return (
             <g key={value}>
@@ -178,7 +639,6 @@ function TrendChart({ points }: { points: ScoreTrendPoint[] }) {
                 y2={y}
                 stroke="currentColor"
                 className="text-slate-200"
-                strokeWidth="1"
               />
               <text
                 x={paddingX - 10}
@@ -193,370 +653,57 @@ function TrendChart({ points }: { points: ScoreTrendPoint[] }) {
         })}
 
         <path
-          d={rollingPath}
+          d={averagePath}
           fill="none"
           stroke="currentColor"
           className="text-slate-400"
           strokeWidth="3"
           strokeDasharray="7 6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
         />
         <path
           d={scorePath}
           fill="none"
           stroke="currentColor"
-          className="text-slate-950"
+          className="text-blue-700"
           strokeWidth="4"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
 
-        {points.map((point, index) => {
-          const x = xFor(index);
-          const y = yFor(point.value);
-          const showLabel = points.length <= 8 || index === 0 || index === points.length - 1;
-          return (
-            <g key={point.recordId}>
-              <circle cx={x} cy={y} r="5" className="fill-white stroke-slate-950" strokeWidth="3" />
-              <text x={x} y={y - 12} textAnchor="middle" className="fill-slate-900 text-[11px] font-semibold">
-                {point.value}
-              </text>
-              {showLabel ? (
+        {points.map((point, index) => (
+          <g key={point.recordId}>
+            <circle
+              cx={xFor(index)}
+              cy={yFor(point.value)}
+              r="5"
+              fill="currentColor"
+              className="text-blue-700"
+            />
+            {(points.length <= 8 ||
+              index === 0 ||
+              index === points.length - 1) && (
+              <>
                 <text
-                  x={x}
-                  y={height - 6}
+                  x={xFor(index)}
+                  y={yFor(point.value) - 12}
+                  textAnchor="middle"
+                  className="fill-slate-900 text-[11px] font-semibold"
+                >
+                  {point.value}
+                </text>
+                <text
+                  x={xFor(index)}
+                  y={height - 5}
                   textAnchor="middle"
                   className="fill-slate-500 text-[10px]"
                 >
                   {point.label}
                 </text>
-              ) : null}
-            </g>
-          );
-        })}
+              </>
+            )}
+          </g>
+        ))}
       </svg>
-      <div className="mt-2 flex flex-wrap gap-5 text-xs text-slate-600">
-        <span className="inline-flex items-center gap-2">
-          <span className="h-0.5 w-6 bg-slate-950" /> Score
-        </span>
-        <span className="inline-flex items-center gap-2">
-          <span className="h-0.5 w-6 border-t-2 border-dashed border-slate-400" /> 3-attempt rolling average
-        </span>
-      </div>
     </div>
-  );
-}
-
-export default function DashboardPage() {
-  const [records, setRecords] = useState<AdaptiveExamRecord[]>([]);
-  const [series, setSeries] = useState<DashboardSeries>("readingWriting");
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    setRecords(loadExamHistory());
-    setLoaded(true);
-  }, []);
-
-  const analytics = useMemo(() => buildAnalyticsSummary(records), [records]);
-  const latest = useMemo(() => latestRecord(records), [records]);
-  const trendPoints = useMemo(() => buildScoreTrend(records, series), [records, series]);
-  const trendSummary = useMemo(() => summarizeTrend(records, series), [records, series]);
-  const readingDomains = useMemo(
-    () => analytics.byDomain.filter((group) => group.label !== "Unclassified"),
-    [analytics.byDomain],
-  );
-  const weakest = useMemo(() => weakestGroups(analytics.bySkill, 4), [analytics.bySkill]);
-  const strongest = useMemo(() => strongestGroups(analytics.byDomain, 4), [analytics.byDomain]);
-  const recent = useMemo(
-    () => [...records].sort((a, b) => b.completedAt - a.completedAt).slice(0, 5),
-    [records],
-  );
-
-  const latestReading = latest?.readingWriting;
-  const latestMath = latest?.math;
-  const latestTotal = latest?.bestTotal;
-
-  if (!loaded) {
-    return (
-      <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <p className="text-sm text-slate-500">Loading dashboard…</p>
-      </main>
-    );
-  }
-
-  return (
-    <main className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Sprint 45B-4
-            </p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              SAT Analytics Dashboard
-            </h1>
-            <p className="mt-2 max-w-2xl text-slate-600">
-              Review score trends, accuracy, adaptive routes, domains, and skills across saved attempts.
-            </p>
-          </div>
-          <nav className="flex flex-wrap gap-3">
-            <Link
-              href="/test/history"
-              className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-100"
-            >
-              Exam history
-            </Link>
-            <Link
-              href="/test/adaptive"
-              className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
-            >
-              Start adaptive test
-            </Link>
-          </nav>
-        </header>
-
-        {records.length === 0 ? (
-          <section className="mt-8 rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-950">No saved attempts yet</h2>
-            <p className="mx-auto mt-2 max-w-xl text-slate-600">
-              Finish the adaptive Reading & Writing test first. Sprint 45B-2 will save the result automatically, and this dashboard will populate from that history.
-            </p>
-            <Link
-              href="/test/adaptive"
-              className="mt-6 inline-flex rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800"
-            >
-              Take the first test
-            </Link>
-          </section>
-        ) : (
-          <>
-            <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <MetricCard
-                label="Latest estimate"
-                value={scoreText(latestTotal ?? latestReading?.score ?? latestMath?.score)}
-                detail={scoreRange(latest)}
-              />
-              <MetricCard
-                label="Reading & Writing"
-                value={scoreText(latestReading?.score)}
-                detail={latestReading ? `${percent(latestReading.accuracy)} accuracy` : "Not completed"}
-              />
-              <MetricCard
-                label="Math"
-                value={scoreText(latestMath?.score)}
-                detail={latestMath ? `${percent(latestMath.accuracy)} accuracy` : "Not completed"}
-              />
-              <MetricCard
-                label="Questions answered"
-                value={String(analytics.completedQuestions)}
-                detail={`${analytics.attempts} saved attempt${analytics.attempts === 1 ? "" : "s"}`}
-              />
-            </section>
-
-            <section className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-              <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <h2 className="text-xl font-semibold text-slate-950">Score trend</h2>
-                    <p className="mt-1 text-sm text-slate-500">
-                      Saved estimates shown chronologically.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap rounded-xl bg-slate-100 p-1">
-                    {(Object.keys(SERIES_LABELS) as DashboardSeries[]).map((key) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => setSeries(key)}
-                        className={`rounded-lg px-3 py-2 text-xs font-semibold transition sm:text-sm ${
-                          series === key
-                            ? "bg-white text-slate-950 shadow-sm"
-                            : "text-slate-600 hover:text-slate-950"
-                        }`}
-                      >
-                        {SERIES_LABELS[key]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  <TrendChart points={trendPoints} />
-                </div>
-
-                <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <MetricCard label="Latest" value={scoreText(trendSummary.latest)} detail={SERIES_LABELS[series]} />
-                  <MetricCard label="Best" value={scoreText(trendSummary.best)} detail="Personal best" />
-                  <MetricCard label="Average" value={scoreText(trendSummary.average)} detail={`${trendSummary.count} scored attempts`} />
-                  <MetricCard
-                    label="Change"
-                    value={
-                      typeof trendSummary.improvement === "number"
-                        ? `${trendSummary.improvement >= 0 ? "+" : ""}${trendSummary.improvement}`
-                        : "—"
-                    }
-                    detail="First to latest"
-                  />
-                </div>
-              </article>
-
-              <aside className="space-y-6">
-                <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h2 className="text-lg font-semibold text-slate-950">Adaptive routing</h2>
-                  <div className="mt-5 grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl bg-slate-950 p-4 text-white">
-                      <p className="text-xs font-medium uppercase tracking-wide text-slate-300">Hard route</p>
-                      <p className="mt-2 text-3xl font-bold">{percent(analytics.routes.hardRate)}</p>
-                      <p className="mt-1 text-xs text-slate-300">{analytics.routes.hard} section attempts</p>
-                    </div>
-                    <div className="rounded-2xl bg-slate-100 p-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Easy route</p>
-                      <p className="mt-2 text-3xl font-bold text-slate-950">{analytics.routes.easy}</p>
-                      <p className="mt-1 text-xs text-slate-500">section attempts</p>
-                    </div>
-                  </div>
-                </article>
-
-                <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h2 className="text-lg font-semibold text-slate-950">Performance snapshot</h2>
-                  <dl className="mt-4 space-y-4 text-sm">
-                    <div className="flex items-center justify-between gap-4">
-                      <dt className="text-slate-500">Overall accuracy</dt>
-                      <dd className="font-semibold text-slate-950">{percent(analytics.overall.accuracy)}</dd>
-                    </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <dt className="text-slate-500">Flagged accuracy</dt>
-                      <dd className="font-semibold text-slate-950">{percent(analytics.flagged.accuracy)}</dd>
-                    </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <dt className="text-slate-500">Average test time</dt>
-                      <dd className="font-semibold text-slate-950">{formatDuration(analytics.averageDurationSeconds)}</dd>
-                    </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <dt className="text-slate-500">Unanswered</dt>
-                      <dd className="font-semibold text-slate-950">{analytics.overall.unanswered}</dd>
-                    </div>
-                  </dl>
-                </article>
-              </aside>
-            </section>
-
-            <section className="mt-6 grid gap-6 lg:grid-cols-2">
-              <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <h2 className="text-xl font-semibold text-slate-950">Domain heatmap</h2>
-                    <p className="mt-1 text-sm text-slate-500">Accuracy across all saved questions.</p>
-                  </div>
-                </div>
-                <div className="mt-6 space-y-5">
-                  {(readingDomains.length ? readingDomains : analytics.byDomain).map((group) => (
-                    <AccuracyBar key={group.label} group={group} />
-                  ))}
-                </div>
-              </article>
-
-              <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="text-xl font-semibold text-slate-950">Difficulty analysis</h2>
-                <p className="mt-1 text-sm text-slate-500">Compare Easy, Medium, and Hard performance.</p>
-                <div className="mt-6 space-y-5">
-                  {analytics.byDifficulty.map((group) => (
-                    <AccuracyBar key={group.label} group={group} />
-                  ))}
-                </div>
-              </article>
-            </section>
-
-            <section className="mt-6 grid gap-6 lg:grid-cols-2">
-              <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="text-xl font-semibold text-slate-950">Strongest domains</h2>
-                <div className="mt-5 space-y-5">
-                  {strongest.length ? (
-                    strongest.map((group) => <AccuracyBar key={group.label} group={group} />)
-                  ) : (
-                    <p className="text-sm text-slate-500">No domain data available.</p>
-                  )}
-                </div>
-              </article>
-
-              <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h2 className="text-xl font-semibold text-slate-950">Skills to improve</h2>
-                    <p className="mt-1 text-sm text-slate-500">Lowest accuracy skills with available data.</p>
-                  </div>
-                  <Link
-                    href="/test/practice/recommended"
-                    className="rounded-full bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
-                  >
-                    Generate practice set
-                  </Link>
-                </div>
-                <div className="mt-5 space-y-5">
-                  {weakest.length ? (
-                    weakest.map((group) => <AccuracyBar key={group.label} group={group} />)
-                  ) : (
-                    <p className="text-sm text-slate-500">No skill data available.</p>
-                  )}
-                </div>
-              </article>
-            </section>
-
-            <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold text-slate-950">Recent attempts</h2>
-                  <p className="mt-1 text-sm text-slate-500">Open a saved record for question-level details.</p>
-                </div>
-                <Link href="/test/history" className="text-sm font-semibold text-slate-900 hover:underline">
-                  View all history
-                </Link>
-              </div>
-              <div className="mt-5 overflow-x-auto">
-                <table className="min-w-full text-left text-sm">
-                  <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
-                    <tr>
-                      <th className="px-3 py-3 font-semibold">Date</th>
-                      <th className="px-3 py-3 font-semibold">Reading</th>
-                      <th className="px-3 py-3 font-semibold">Math</th>
-                      <th className="px-3 py-3 font-semibold">Total</th>
-                      <th className="px-3 py-3 font-semibold">Accuracy</th>
-                      <th className="px-3 py-3 font-semibold"><span className="sr-only">Open</span></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {recent.map((record) => {
-                      const correct = record.questionResults.filter((question) => question.correct).length;
-                      const total = record.questionResults.length;
-                      return (
-                        <tr key={record.id} className="text-slate-700">
-                          <td className="whitespace-nowrap px-3 py-4">
-                            {new Date(record.completedAt).toLocaleDateString(undefined, {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </td>
-                          <td className="px-3 py-4 font-semibold text-slate-950">{scoreText(record.readingWriting?.score)}</td>
-                          <td className="px-3 py-4 font-semibold text-slate-950">{scoreText(record.math?.score)}</td>
-                          <td className="px-3 py-4 font-semibold text-slate-950">{scoreText(record.bestTotal)}</td>
-                          <td className="px-3 py-4">{total ? percent(correct / total) : "—"}</td>
-                          <td className="px-3 py-4 text-right">
-                            <Link href={`/test/history/${record.id}`} className="font-semibold text-slate-950 hover:underline">
-                              Details
-                            </Link>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          </>
-        )}
-      </div>
-    </main>
   );
 }

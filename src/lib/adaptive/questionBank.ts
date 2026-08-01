@@ -20,13 +20,30 @@ export const readingWritingBank: ExamQuestion[] = [
 
 export const mathBank: ExamQuestion[] = mathBankV2;
 
+export const fullQuestionBank: ExamQuestion[] = [
+  ...readingWritingBank,
+  ...mathBank,
+];
+
+const questionById = new Map<string, ExamQuestion>();
+
+for (const question of fullQuestionBank) {
+  /*
+   * Most existing score/session code stores CourseQuestion.id, while adaptive
+   * answer maps use ExamQuestion.examId. Supporting both identifiers keeps
+   * old Reading records compatible and allows Math score reconstruction.
+   */
+  questionById.set(question.id, question);
+  questionById.set(question.examId, question);
+}
+
 export function getQuestion(id: string): ExamQuestion | undefined {
-  return readingWritingBank.find((question) => question.id === id);
+  return questionById.get(id);
 }
 
 export const bankStats = {
   totalReadingWriting: readingWritingBank.length,
   totalMath: mathBank.length,
-  total: readingWritingBank.length + mathBank.length,
+  total: fullQuestionBank.length,
   readingHardPack1: readingHardPack1.length,
 };

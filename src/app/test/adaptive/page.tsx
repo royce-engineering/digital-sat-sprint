@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { SessionLeaseGuard } from "@/components/adaptive/SessionLeaseGuard";
 import { buildReadingAdaptiveExam } from "@/lib/adaptive/readingAdaptiveEngine";
 import { getQuestion } from "@/lib/adaptive/questionBank";
 import {
@@ -14,11 +15,23 @@ import {
   clearReadingSession,
   loadReadingSession,
   saveReadingSession,
+  READING_MODULE_SECONDS,
   type ReadingExamPhase,
   type ReadingSessionState,
 } from "@/lib/adaptive/session/readingSession";
 
-const MODULE_SECONDS = 12 * 60;
+import {
+  phaseUsesModuleTimer,
+  readDeadlineTimer,
+  resetDeadlineTimer,
+  startDeadlineTimer,
+} from "@/lib/adaptive/runtime/deadlineTimer";
+import {
+  claimModuleSubmission,
+  createModuleSubmissionState,
+} from "@/lib/adaptive/runtime/moduleSubmissionGuard";
+
+const MODULE_SECONDS = READING_MODULE_SECONDS;
 const HARD_ROUTE_THRESHOLD = 0.65;
 
 function newSeed(): number {
@@ -46,6 +59,8 @@ function createInitialSession(): ReadingSessionState {
     answers: {},
     currentIndex: 0,
     secondsRemaining: MODULE_SECONDS,
+    timerDeadlineAt: undefined,
+    submissionState: createModuleSubmissionState(),
     startedAt: Date.now(),
     updatedAt: Date.now(),
   };
@@ -70,7 +85,7 @@ function answered(question: ExamQuestion, answer?: ScoreAnswer): boolean {
   return answer.selected >= 0;
 }
 
-export default function AdaptiveReadingPage() {
+function AdaptiveReadingPageContent() {
   const [session, setSession] = useState<ReadingSessionState | null>(null);
 
   useEffect(() => {
@@ -116,51 +131,174 @@ export default function AdaptiveReadingPage() {
   );
 
   const submitModule1 = useCallback(() => {
-    if (!session || !adaptiveExam) return;
+    if (!adaptiveExam) return;
 
-    const result = adaptiveExam.buildModule2(session.answers);
-    setSession((current) =>
-      current
-        ? {
-            ...current,
-            phase: "module-2-transition",
-            module2Route: result.route,
-            module2QuestionIds: result.questions.map((question) => question.id),
-            currentIndex: 0,
-            secondsRemaining: MODULE_SECONDS,
-          }
-        : current,
-    );
-  }, [session, adaptiveExam]);
+    setSession((current) => {
+      if (
+        !current ||
+        (current.phase !== "module-1" &&
+          current.phase !== "module-1-review")
+      ) {
+        return current;
+      }
+
+      const claim = claimModuleSubmission(
+        current.submissionState ??
+          createModuleSubmissionState(),
+        "reading-module-1",
+      );
+
+      if (!claim.allowed) return current;
+
+      const result = adaptiveExam.buildModule2(
+        current.answers,
+      );
+
+      return {
+        ...current,
+        phase: "module-2-transition",
+        module2Route: result.route,
+        module2QuestionIds: result.questions.map(
+          (question) => question.examId,
+        ),
+        currentIndex: 0,
+        secondsRemaining: MODULE_SECONDS,
+        timerDeadlineAt: undefined,
+        submissionState: claim.state,
+      };
+    });
+  }, [adaptiveExam]);
 
   const submitModule2 = useCallback(() => {
-    setSession((current) =>
-      current ? { ...current, phase: "results", currentIndex: 0 } : current,
-    );
+    setSession((current) => {
+      if (
+        !current ||
+        (current.phase !== "module-2" &&
+          current.phase !== "module-2-review")
+      ) {
+        return current;
+      }
+
+      const claim = claimModuleSubmission(
+        current.submissionState ??
+          createModuleSubmissionState(),
+        "reading-module-2",
+      );
+
+      if (!claim.allowed) return current;
+
+      return {
+        ...current,
+        phase: "results",
+        currentIndex: 0,
+        secondsRemaining: 0,
+        timerDeadlineAt: undefined,
+        submissionState: claim.state,
+      };
+    });
   }, []);
 
   useEffect(() => {
-    if (!session) return;
-    const timedPhase = session.phase === "module-1" || session.phase === "module-2";
-    if (!timedPhase) return;
-
-    if (session.secondsRemaining <= 0) {
-      if (session.phase === "module-1") submitModule1();
-      else submitModule2();
+    if (
+      !session ||
+      !phaseUsesModuleTimer(session.phase)
+    ) {
       return;
     }
 
-    const timer = window.setInterval(() => {
+    const tick = () => {
       setSession((current) => {
-        if (!current || (current.phase !== "module-1" && current.phase !== "module-2")) {
+        if (
+          !current ||
+          !phaseUsesModuleTimer(current.phase)
+        ) {
           return current;
         }
-        return { ...current, secondsRemaining: Math.max(0, current.secondsRemaining - 1) };
-      });
-    }, 1000);
 
-    return () => window.clearInterval(timer);
-  }, [session?.phase, session?.secondsRemaining, submitModule1, submitModule2]);
+        const timer = current.timerDeadlineAt
+          ? readDeadlineTimer(current)
+          : startDeadlineTimer(
+              current.secondsRemaining,
+            );
+
+        const timed = {
+          ...current,
+          timerDeadlineAt:
+            timer.timerDeadlineAt,
+          secondsRemaining:
+            timer.secondsRemaining,
+        };
+
+        if (!timer.expired) return timed;
+
+        if (
+          current.phase === "module-1" ||
+          current.phase === "module-1-review"
+        ) {
+          if (!adaptiveExam) return timed;
+
+          const claim = claimModuleSubmission(
+            current.submissionState ??
+              createModuleSubmissionState(),
+            "reading-module-1",
+          );
+
+          if (!claim.allowed) return timed;
+
+          const result =
+            adaptiveExam.buildModule2(
+              current.answers,
+            );
+
+          return {
+            ...timed,
+            phase: "module-2-transition",
+            module2Route: result.route,
+            module2QuestionIds:
+              result.questions.map(
+                (question) =>
+                  question.examId,
+              ),
+            currentIndex: 0,
+            secondsRemaining:
+              MODULE_SECONDS,
+            timerDeadlineAt: undefined,
+            submissionState: claim.state,
+          };
+        }
+
+        const claim = claimModuleSubmission(
+          current.submissionState ??
+            createModuleSubmissionState(),
+          "reading-module-2",
+        );
+
+        if (!claim.allowed) return timed;
+
+        return {
+          ...timed,
+          phase: "results",
+          currentIndex: 0,
+          secondsRemaining: 0,
+          timerDeadlineAt: undefined,
+          submissionState: claim.state,
+        };
+      });
+    };
+
+    tick();
+    const timerId = window.setInterval(
+      tick,
+      1000,
+    );
+
+    return () =>
+      window.clearInterval(timerId);
+  }, [
+    session?.phase,
+    session?.timerDeadlineAt,
+    adaptiveExam,
+  ]);
 
   if (!session || !adaptiveExam) {
     return <main className="mx-auto max-w-5xl p-8">Loading adaptive test…</main>;
@@ -168,16 +306,25 @@ export default function AdaptiveReadingPage() {
 
   const startExam = () => {
     const questions = adaptiveExam.module1;
+    const timer = resetDeadlineTimer(
+      MODULE_SECONDS,
+    );
+
     setSession({
       ...session,
       phase: "module-1",
-      module1QuestionIds: questions.map((question) => question.id),
+      module1QuestionIds: questions.map((question) => question.examId),
       module2QuestionIds: [],
       module2Route: undefined,
       historyRecordId: undefined,
       answers: {},
       currentIndex: 0,
-      secondsRemaining: MODULE_SECONDS,
+      secondsRemaining:
+        timer.secondsRemaining,
+      timerDeadlineAt:
+        timer.timerDeadlineAt,
+      submissionState:
+        createModuleSubmissionState(),
       startedAt: Date.now(),
     });
   };
@@ -224,7 +371,21 @@ export default function AdaptiveReadingPage() {
           <p className="mt-2 text-4xl font-black">{session.module2Route}</p>
           <button
             type="button"
-            onClick={() => setSession({ ...session, phase: "module-2", currentIndex: 0 })}
+            onClick={() => {
+              const timer = resetDeadlineTimer(
+                MODULE_SECONDS,
+              );
+
+              setSession({
+                ...session,
+                phase: "module-2",
+                currentIndex: 0,
+                secondsRemaining:
+                  timer.secondsRemaining,
+                timerDeadlineAt:
+                  timer.timerDeadlineAt,
+              });
+            }}
             className="mt-8 rounded-lg bg-blue-700 px-6 py-3 font-semibold text-white hover:bg-blue-800"
           >
             Start Module 2
@@ -482,6 +643,14 @@ export default function AdaptiveReadingPage() {
         </aside>
       </div>
     </main>
+  );
+}
+
+export default function AdaptiveReadingPage() {
+  return (
+    <SessionLeaseGuard kind="reading">
+      <AdaptiveReadingPageContent />
+    </SessionLeaseGuard>
   );
 }
 

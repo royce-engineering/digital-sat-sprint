@@ -85,7 +85,186 @@ const graphQuestions: ExamQuestion[] = Array.from({ length: 20 }, (_, i) => {
   };
 });
 
-export const mathBankV2: ExamQuestion[] = [...studentResponse, ...tableQuestions, ...modelingQuestions, ...graphQuestions];
+
+const advancedMathQuestions: ExamQuestion[] = Array.from(
+  { length: 24 },
+  (_, i) => {
+    const questionIndex = 1000 + i;
+    const mode = i % 4;
+
+    if (mode === 0) {
+      const root1 = 2 + (i % 5);
+      const root2 = 6 + (i % 7);
+      const sum = root1 + root2;
+      const product = root1 * root2;
+      const correct = String(sum);
+      const distractors = [
+        String(product),
+        String(root2 - root1),
+        String(sum + 1),
+      ];
+      const values = [correct, ...distractors];
+      const shift = i % 4;
+      const ordered = values.map(
+        (_, index) => values[(index + shift) % 4],
+      );
+      const answer = ordered.indexOf(correct);
+
+      return {
+        ...baseQuestion(
+          questionIndex,
+          "multiple-choice",
+          "Advanced Math",
+          "Quadratic Equations",
+        ),
+        passage: `The equation x² - ${sum}x + ${product} = 0 has two positive solutions.`,
+        prompt: "What is the sum of the two solutions?",
+        choices: ordered.map((text, index) =>
+          choice(
+            text,
+            index === answer,
+            `By Vieta's formulas, the sum of the solutions is ${sum}.`,
+          ),
+        ),
+        answer,
+        walkthrough: [
+          "For x² - sx + p = 0, the sum of the solutions is s.",
+          `Here, s = ${sum}.`,
+        ],
+      };
+    }
+
+    if (mode === 1) {
+      const base = 2 + (i % 4);
+      const exponent = 3 + (i % 3);
+      const value = base ** exponent;
+      const correct = String(value);
+      const distractors = [
+        String(base * exponent),
+        String(base ** (exponent - 1)),
+        String(value + base),
+      ];
+      const values = [correct, ...distractors];
+      const shift = (i + 1) % 4;
+      const ordered = values.map(
+        (_, index) => values[(index + shift) % 4],
+      );
+      const answer = ordered.indexOf(correct);
+
+      return {
+        ...baseQuestion(
+          questionIndex,
+          "multiple-choice",
+          "Advanced Math",
+          "Exponential Functions",
+        ),
+        passage: `The function f(x) = ${base}^x.`,
+        prompt: `What is the value of f(${exponent})?`,
+        choices: ordered.map((text, index) =>
+          choice(
+            text,
+            index === answer,
+            `Substitute x = ${exponent}: f(${exponent}) = ${base}^${exponent} = ${value}.`,
+          ),
+        ),
+        answer,
+        walkthrough: [
+          `Substitute ${exponent} for x.`,
+          `Evaluate ${base}^${exponent} = ${value}.`,
+        ],
+      };
+    }
+
+    if (mode === 2) {
+      const a = 2 + (i % 4);
+      const b = 3 + (i % 5);
+      const correct = `${a}x + ${b}`;
+      const distractors = [
+        `${a}x - ${b}`,
+        `${b}x + ${a}`,
+        `${a + b}x`,
+      ];
+      const values = [correct, ...distractors];
+      const shift = (i + 2) % 4;
+      const ordered = values.map(
+        (_, index) => values[(index + shift) % 4],
+      );
+      const answer = ordered.indexOf(correct);
+
+      return {
+        ...baseQuestion(
+          questionIndex,
+          "multiple-choice",
+          "Advanced Math",
+          "Polynomial Operations",
+        ),
+        passage: `(x + 1)(${a}x + ${b}) = ${a}x² + ${a + b}x + ${b}`,
+        prompt:
+          "Which expression is the quotient when the polynomial is divided by x + 1?",
+        choices: ordered.map((text, index) =>
+          choice(
+            text,
+            index === answer,
+            `The displayed factorization shows that the quotient is ${correct}.`,
+          ),
+        ),
+        answer,
+        walkthrough: [
+          "Use the given factorization.",
+          `Cancel the factor x + 1 to obtain ${correct}.`,
+        ],
+      };
+    }
+
+    const solution = 3 + (i % 6);
+    const coefficient = 2 + (i % 5);
+    const constant = coefficient * solution - 1;
+    const correct = String(solution);
+    const distractors = [
+      String(solution + 1),
+      String(solution - 1),
+      String(constant),
+    ];
+    const values = [correct, ...distractors];
+    const shift = (i + 3) % 4;
+    const ordered = values.map(
+      (_, index) => values[(index + shift) % 4],
+    );
+    const answer = ordered.indexOf(correct);
+
+    return {
+      ...baseQuestion(
+        questionIndex,
+        "multiple-choice",
+        "Advanced Math",
+        "Radical Equations",
+      ),
+      passage: `√(${coefficient}x + 1) = √${coefficient * solution + 1}`,
+      prompt: "What is the value of x?",
+      choices: ordered.map((text, index) =>
+        choice(
+          text,
+          index === answer,
+          `Square both sides and solve ${coefficient}x + 1 = ${coefficient * solution + 1}, giving x = ${solution}.`,
+        ),
+      ),
+      answer,
+      walkthrough: [
+        "Square both sides.",
+        `Solve ${coefficient}x + 1 = ${coefficient * solution + 1}.`,
+        `x = ${solution}.`,
+      ],
+    };
+  },
+);
+
+export const mathBankV2: ExamQuestion[] = [
+  ...studentResponse,
+  ...tableQuestions,
+  ...modelingQuestions,
+  ...graphQuestions,
+  ...advancedMathQuestions,
+];
 
 export const mathBankV2Stats = {
   total: mathBankV2.length,
@@ -93,4 +272,5 @@ export const mathBankV2Stats = {
   table: tableQuestions.length,
   modeling: modelingQuestions.length,
   graph: graphQuestions.length,
+  advancedMath: advancedMathQuestions.length,
 };
