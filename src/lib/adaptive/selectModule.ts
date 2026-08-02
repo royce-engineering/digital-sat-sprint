@@ -1,21 +1,7 @@
-import type {
-  ExamDifficulty,
-  ExamQuestion,
-  ExamSection,
-} from "./types";
-import {
-  readingWritingBank,
-} from "./questionBank";
-import {
-  mathBankV2,
-} from "./mathBankV2";
-import {
-  getBlueprint,
-  selectByBlueprint,
-} from "./blueprint";
-import {
-  buildReadingModule,
-} from "./blueprintEngine";
+import type { ExamDifficulty, ExamQuestion, ExamSection } from "./types";
+import { readingWritingBank, mathBank } from "./questionBank";
+import { getBlueprint, selectByBlueprint } from "./blueprint";
+import { buildReadingModule } from "./blueprintEngine";
 import {
   readingModule1Blueprint,
   readingModule2EasyBlueprint,
@@ -52,14 +38,10 @@ export function selectReadingModule({
    * Keeping the hard module filter would make Module 2 Easy unable to use most
    * Easy questions because many older Easy records are tagged module 1.
    */
-  return buildReadingModule(
-    readingWritingBank,
-    blueprint,
-    {
-      seed,
-      excludeIds: exclude,
-    },
-  );
+  return buildReadingModule(readingWritingBank, blueprint, {
+    seed,
+    excludeIds: exclude,
+  });
 }
 
 export function selectModule(
@@ -69,21 +51,8 @@ export function selectModule(
   seed: number,
   exclude: string[] = [],
 ): ExamQuestion[] {
-  const bank =
-    section === "Math"
-      ? mathBankV2
-      : readingWritingBank;
-  const blueprint =
-    getBlueprint(
-      section,
-      difficulty,
-      count,
-    );
+  const bank = section === "Math" ? mathBank : readingWritingBank;
+  const blueprint = getBlueprint(section, difficulty, count);
 
-  return selectByBlueprint(
-    bank,
-    blueprint,
-    seed,
-    exclude,
-  );
+  return selectByBlueprint(bank, blueprint, seed, exclude);
 }

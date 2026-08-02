@@ -17,6 +17,12 @@ import { readingExpansionPack11 } from "./readingExpansionPack11";
 import { migrateLegacyReadingWalkthroughs } from "./legacyWalkthroughMigration";
 import { retireVerifiedReadingDuplicates } from "./readingDuplicateRetirement";
 import { readingExpansionPack12 } from "./readingExpansionPack12";
+import { repairMathContent } from "./mathContentRepair";
+import { generateVerifiedMathWalkthroughs } from "./mathGeneratedWalkthroughs";
+import { mathExpansionPack1 } from "./mathExpansionPack1";
+import { mathExpansionPack2 } from "./mathExpansionPack2";
+import { mathExpansionPack3 } from "./mathExpansionPack3";
+import { mathExpansionPack4 } from "./mathExpansionPack4";
 
 // Add your existing banks to this array as additional spreads.
 const readingWritingBankBase: ExamQuestion[] = [
@@ -45,7 +51,18 @@ export const readingWritingBank: ExamQuestion[] =
     readingWritingBankWithoutVerifiedDuplicates,
   ).questions;
 
-export const mathBank: ExamQuestion[] = mathBankV2;
+const rawMathBank: ExamQuestion[] = [
+  ...mathBankV2,
+  ...mathExpansionPack1,
+  ...mathExpansionPack2,
+  ...mathExpansionPack3,
+  ...mathExpansionPack4,
+];
+
+const repairedMathBank = repairMathContent(rawMathBank).questions;
+
+export const mathBank: ExamQuestion[] =
+  generateVerifiedMathWalkthroughs(repairedMathBank).questions;
 
 export const fullQuestionBank: ExamQuestion[] = [
   ...readingWritingBank,
@@ -87,4 +104,10 @@ export const bankStats = {
   readingExpansionPack12: readingExpansionPack12.length,
   readingWritingBankBase: readingWritingBankBase.length,
   withoutDuplicates: readingWritingBankWithoutVerifiedDuplicates.length,
+  mathBankV2: mathBankV2.length,
+  mathExpansionPack1: mathExpansionPack1.length,
+  mathExpansionPack2: mathExpansionPack2.length,
+  mathExpansionPack3: mathExpansionPack3.length,
+  mathExpansionPack4: mathExpansionPack4.length,
+  rawMath: rawMathBank.length,
 };
