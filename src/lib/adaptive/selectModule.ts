@@ -1,8 +1,21 @@
-import type { ExamDifficulty, ExamQuestion, ExamSection } from "./types";
-import { readingWritingBank } from "./questionBank";
-import { mathBankV2 } from "./mathBankV2";
-import { getBlueprint, selectByBlueprint } from "./blueprint";
-import { buildReadingModule } from "./blueprintEngine";
+import type {
+  ExamDifficulty,
+  ExamQuestion,
+  ExamSection,
+} from "./types";
+import {
+  readingWritingBank,
+} from "./questionBank";
+import {
+  mathBankV2,
+} from "./mathBankV2";
+import {
+  getBlueprint,
+  selectByBlueprint,
+} from "./blueprint";
+import {
+  buildReadingModule,
+} from "./blueprintEngine";
 import {
   readingModule1Blueprint,
   readingModule2EasyBlueprint,
@@ -29,11 +42,24 @@ export function selectReadingModule({
         ? readingModule2HardBlueprint
         : readingModule2EasyBlueprint;
 
-  return buildReadingModule(readingWritingBank, blueprint, {
-    module,
-    seed,
-    excludeIds: exclude,
-  });
+  /*
+   * Do not filter candidates by question.blueprint.module.
+   *
+   * Difficulty, domain, skill, and the explicit exclusion list define
+   * production eligibility. Historical question-level module tags were added
+   * by content packs as placement hints, not as permanent hard restrictions.
+   *
+   * Keeping the hard module filter would make Module 2 Easy unable to use most
+   * Easy questions because many older Easy records are tagged module 1.
+   */
+  return buildReadingModule(
+    readingWritingBank,
+    blueprint,
+    {
+      seed,
+      excludeIds: exclude,
+    },
+  );
 }
 
 export function selectModule(
@@ -43,8 +69,21 @@ export function selectModule(
   seed: number,
   exclude: string[] = [],
 ): ExamQuestion[] {
-  const bank = section === "Math" ? mathBankV2 : readingWritingBank;
-  const blueprint = getBlueprint(section, difficulty, count);
+  const bank =
+    section === "Math"
+      ? mathBankV2
+      : readingWritingBank;
+  const blueprint =
+    getBlueprint(
+      section,
+      difficulty,
+      count,
+    );
 
-  return selectByBlueprint(bank, blueprint, seed, exclude);
+  return selectByBlueprint(
+    bank,
+    blueprint,
+    seed,
+    exclude,
+  );
 }

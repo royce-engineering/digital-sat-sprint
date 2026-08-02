@@ -22,6 +22,7 @@ export type ReadingPassageType =
   | "Paired History Texts"
   | "Paired Social Science Texts"
   | "Paired Economics Texts"
+  | "Paired Government Texts"
   | "Experimental Design"
   | "Academic"
   | "Government"

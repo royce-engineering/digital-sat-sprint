@@ -3,20 +3,47 @@ import { advancedReadingBank } from "./advancedReadingBank";
 import { mathBankV2 } from "./mathBankV2";
 import { readingBankV2, wordsInContextV2 } from "./readingBankV2";
 import { readingHardPack1 } from "./readingHardPack1";
-import {
-  supplementalGrammarBank,
-  vocabularyExamBank,
-} from "./supplementalBank";
+import { readingExpansionPack1 } from "./readingExpansionPack1";
+import { readingExpansionPack2 } from "./readingExpansionPack2";
+import { readingExpansionPack3 } from "./readingExpansionPack3";
+import { readingExpansionPack4 } from "./readingExpansionPack4";
+import { readingExpansionPack5 } from "./readingExpansionPack5";
+import { readingExpansionPack6 } from "./readingExpansionPack6";
+import { readingExpansionPack7 } from "./readingExpansionPack7";
+import { readingExpansionPack8 } from "./readingExpansionPack8";
+import { readingExpansionPack9 } from "./readingExpansionPack9";
+import { readingExpansionPack10 } from "./readingExpansionPack10";
+import { readingExpansionPack11 } from "./readingExpansionPack11";
+import { migrateLegacyReadingWalkthroughs } from "./legacyWalkthroughMigration";
+import { retireVerifiedReadingDuplicates } from "./readingDuplicateRetirement";
+import { readingExpansionPack12 } from "./readingExpansionPack12";
 
 // Add your existing banks to this array as additional spreads.
-export const readingWritingBank: ExamQuestion[] = [
+const readingWritingBankBase: ExamQuestion[] = [
   ...readingBankV2,
   ...advancedReadingBank,
   ...wordsInContextV2,
-  ...supplementalGrammarBank,
-  ...vocabularyExamBank,
   ...readingHardPack1,
+  ...readingExpansionPack1,
+  ...readingExpansionPack2,
+  ...readingExpansionPack3,
+  ...readingExpansionPack4,
+  ...readingExpansionPack5,
+  ...readingExpansionPack6,
+  ...readingExpansionPack7,
+  ...readingExpansionPack8,
+  ...readingExpansionPack9,
+  ...readingExpansionPack10,
+  ...readingExpansionPack11,
+  ...readingExpansionPack12,
 ];
+const readingWritingBankWithoutVerifiedDuplicates =
+  retireVerifiedReadingDuplicates(readingWritingBankBase).questions;
+
+export const readingWritingBank: ExamQuestion[] =
+  migrateLegacyReadingWalkthroughs(
+    readingWritingBankWithoutVerifiedDuplicates,
+  ).questions;
 
 export const mathBank: ExamQuestion[] = mathBankV2;
 
@@ -46,4 +73,18 @@ export const bankStats = {
   totalMath: mathBank.length,
   total: fullQuestionBank.length,
   readingHardPack1: readingHardPack1.length,
+  readingExpansionPack1: readingExpansionPack1.length,
+  readingExpansionPack2: readingExpansionPack2.length,
+  readingExpansionPack3: readingExpansionPack3.length,
+  readingExpansionPack4: readingExpansionPack4.length,
+  readingExpansionPack5: readingExpansionPack5.length,
+  readingExpansionPack6: readingExpansionPack6.length,
+  readingExpansionPack7: readingExpansionPack7.length,
+  readingExpansionPack8: readingExpansionPack8.length,
+  readingExpansionPack9: readingExpansionPack9.length,
+  readingExpansionPack10: readingExpansionPack10.length,
+  readingExpansionPack11: readingExpansionPack11.length,
+  readingExpansionPack12: readingExpansionPack12.length,
+  readingWritingBankBase: readingWritingBankBase.length,
+  withoutDuplicates: readingWritingBankWithoutVerifiedDuplicates.length,
 };

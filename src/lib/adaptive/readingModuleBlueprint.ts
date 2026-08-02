@@ -1,4 +1,8 @@
-import type { Difficulty, ReadingDomain, ReadingPassageType } from "./types";
+import type {
+  Difficulty,
+  ReadingDomain,
+  ReadingPassageType,
+} from "./types";
 
 export interface ReadingBlueprintSlot {
   count: number;
@@ -8,73 +12,119 @@ export interface ReadingBlueprintSlot {
   difficulty?: Difficulty;
 }
 
+/**
+ * Production Reading & Writing blueprint.
+ *
+ * Each module contains 27 questions.
+ *
+ * Domain distribution:
+ *
+ * Information and Ideas            10
+ * Craft and Structure               7
+ * Expression of Ideas               4
+ * Standard English Conventions      6
+ *                                  --
+ *                                  27
+ */
 export const readingModule1Blueprint: ReadingBlueprintSlot[] = [
   {
+    count: 4,
+    domain: "Information and Ideas",
+    skills: [
+      "Central Ideas and Details",
+      "Main Idea",
+      "Inference",
+    ],
+  },
+  {
     count: 3,
     domain: "Information and Ideas",
-    skills: ["Central Ideas and Details", "Inference", "Command of Evidence"],
+    skills: [
+      "Command of Evidence",
+      "Quantitative Evidence",
+    ],
+  },
+  {
+    count: 3,
+    domain: "Information and Ideas",
+    skills: [
+      "Main Idea",
+      "Inference",
+      "Quantitative Evidence",
+    ],
+  },
+  {
+    count: 4,
+    domain: "Craft and Structure",
+    skills: [
+      "Words in Context",
+      "Text Structure and Purpose",
+    ],
   },
   {
     count: 3,
     domain: "Craft and Structure",
-    skills: ["Words in Context", "Text Structure and Purpose"],
+    skills: [
+      "Author's Purpose",
+      "Cross-Text Connections",
+    ],
   },
   {
     count: 2,
     domain: "Expression of Ideas",
+    skills: ["Concision"],
+  },
+  {
+    count: 2,
+    domain: "Expression of Ideas",
+    skills: ["Transitions"],
   },
   {
     count: 2,
     domain: "Standard English Conventions",
+    skills: [
+      "Sentence Boundaries",
+      "Punctuation",
+    ],
+  },
+  {
+    count: 2,
+    domain: "Standard English Conventions",
+    skills: [
+      "Verb Agreement",
+      "Modifiers",
+    ],
+  },
+  {
+    count: 2,
+    domain: "Standard English Conventions",
+    skills: [
+      "Parallel Structure",
+      "Pronouns",
+    ],
   },
 ];
 
-export const readingModule2HardBlueprint: ReadingBlueprintSlot[] = [
-  {
-    count: 4,
-    domain: "Information and Ideas",
-    skills: ["Central Ideas and Details", "Inference", "Command of Evidence"],
-    difficulty: "Hard",
-  },
-  {
-    count: 3,
-    domain: "Craft and Structure",
-    skills: ["Words in Context", "Text Structure and Purpose"],
-    difficulty: "Hard",
-  },
-  {
-    count: 2,
-    domain: "Expression of Ideas",
-    difficulty: "Hard",
-  },
-  {
-    count: 2,
-    domain: "Standard English Conventions",
-    difficulty: "Hard",
-  },
-];
+function withDifficulty(
+  difficulty: Difficulty,
+): ReadingBlueprintSlot[] {
+  return readingModule1Blueprint.map(
+    (slot) => ({
+      ...slot,
+      skills: slot.skills
+        ? [...slot.skills]
+        : undefined,
+      passageTypes:
+        slot.passageTypes
+          ? [...slot.passageTypes]
+          : undefined,
+      difficulty,
+    }),
+  );
+}
 
-export const readingModule2EasyBlueprint: ReadingBlueprintSlot[] = [
-  {
-    count: 4,
-    domain: "Information and Ideas",
-    skills: ["Central Ideas and Details", "Inference", "Command of Evidence"],
-    difficulty: "Easy",
-  },
-  {
-    count: 3,
-    domain: "Craft and Structure",
-    skills: ["Words in Context", "Text Structure and Purpose"],
-    difficulty: "Easy",
-  },
-  {
-    count: 2,
-    domain: "Expression of Ideas",
-    difficulty: "Easy",
-  },
-  {
-    count: 2,
-    domain: "Standard English Conventions",
-    difficulty: "Easy",
-  },
-];
+export const readingModule2EasyBlueprint =
+  withDifficulty("Easy");
+
+export const readingModule2HardBlueprint =
+  withDifficulty("Hard");
