@@ -1,21 +1,27 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { runMathProductionGate } from "@/lib/adaptive/mathProductionGate";
 
 export default function Page() {
   const [run, setRun] = useState(0);
-  const report = useMemo(() => runMathProductionGate(1000), [run]);
+  const report = runMathProductionGate(1000);
 
   return (
     <main className="mx-auto max-w-6xl space-y-7 p-5 sm:p-8">
-      <section className={`rounded-3xl p-8 text-white ${report.passed ? "bg-emerald-950" : "bg-red-950"}`}>
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/70">Sprint 54F</p>
+      <section
+        className={`rounded-3xl p-8 text-white ${report.passed ? "bg-emerald-950" : "bg-red-950"}`}
+      >
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/70">
+          Sprint 54F
+        </p>
         <div className="mt-4 flex flex-wrap items-end justify-between gap-5">
           <div>
             <h1 className="text-4xl font-bold">Math Production Gate</h1>
             <p className="mt-3 text-white/75">
-              {report.passed ? "Math Bank is production-ready." : "Math Bank is not yet production-ready."}
+              {report.passed
+                ? "Math Bank is production-ready."
+                : "Math Bank is not yet production-ready."}
             </p>
           </div>
           <button
@@ -43,7 +49,9 @@ export default function Page() {
             >
               <div className="flex items-center justify-between gap-3">
                 <h3 className="font-bold">{check.name}</h3>
-                <span className={`rounded-full px-3 py-1 text-xs font-bold ${check.passed ? "bg-emerald-900 text-white" : "bg-red-900 text-white"}`}>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-bold ${check.passed ? "bg-emerald-900 text-white" : "bg-red-900 text-white"}`}
+                >
                   {check.passed ? "PASS" : "FAIL"}
                 </span>
               </div>

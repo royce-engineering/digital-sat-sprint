@@ -1,14 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { runMathProductionSelectorStress } from "@/lib/adaptive/mathProductionSelectorStress";
 
 export default function Page() {
   const [run, setRun] = useState(0);
-  const report = useMemo(
-    () => runMathProductionSelectorStress(1000),
-    [run],
-  );
+  const report = runMathProductionSelectorStress(1000);
 
   return (
     <main className="mx-auto max-w-7xl space-y-7 p-5 sm:p-8">
