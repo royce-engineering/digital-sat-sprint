@@ -1,17 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  validateReadingExpansionPack2,
-} from "@/lib/adaptive/readingExpansionPack2/validator";
+import { validateReadingExpansionPack2 } from "@/lib/adaptive/readingExpansionPack2/validator";
 
 export default function ReadingExpansion2DiagnosticPage() {
   const [runNumber, setRunNumber] = useState(0);
-  const report = useMemo(
-    () => validateReadingExpansionPack2(),
-    [runNumber],
-  );
 
+  const report = validateReadingExpansionPack2();
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-5 sm:p-8">
       <section
@@ -22,9 +17,7 @@ export default function ReadingExpansion2DiagnosticPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/70">
           Sprint 52C
         </p>
-        <h1 className="mt-3 text-4xl font-bold">
-          Reading Expansion Pack 2
-        </h1>
+        <h1 className="mt-3 text-4xl font-bold">Reading Expansion Pack 2</h1>
         <p className="mt-3 text-white/75">
           {report.passed
             ? "All 44 questions passed validation."

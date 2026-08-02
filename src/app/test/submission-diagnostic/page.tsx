@@ -1,27 +1,17 @@
 "use client";
 
-import {
-  useMemo,
-  useState,
-} from "react";
-import {
-  diagnoseModuleSubmissionGuard,
-} from "@/lib/adaptive/runtime/moduleSubmissionDiagnostics";
+import { useMemo, useState } from "react";
+import { diagnoseModuleSubmissionGuard } from "@/lib/adaptive/runtime/moduleSubmissionDiagnostics";
 
 export default function SubmissionDiagnosticPage() {
   const [runNumber, setRunNumber] = useState(0);
-  const report = useMemo(
-    () => diagnoseModuleSubmissionGuard(),
-    [runNumber],
-  );
+  const report = diagnoseModuleSubmissionGuard();
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-5 sm:p-8">
       <section
         className={`rounded-3xl p-8 text-white ${
-          report.passed
-            ? "bg-emerald-950"
-            : "bg-red-950"
+          report.passed ? "bg-emerald-950" : "bg-red-950"
         }`}
       >
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/70">
@@ -37,9 +27,7 @@ export default function SubmissionDiagnosticPage() {
         </p>
         <button
           type="button"
-          onClick={() =>
-            setRunNumber((value) => value + 1)
-          }
+          onClick={() => setRunNumber((value) => value + 1)}
           className="mt-6 rounded-xl border border-white/25 px-5 py-3 font-semibold"
         >
           Run again
@@ -48,12 +36,8 @@ export default function SubmissionDiagnosticPage() {
 
       <section className="rounded-3xl border bg-white p-6 shadow-sm sm:p-8">
         <h2 className="text-2xl font-bold">
-          {
-            report.checks.filter(
-              (item) => item.passed,
-            ).length
-          }
-          /{report.checks.length} checks passed
+          {report.checks.filter((item) => item.passed).length}/
+          {report.checks.length} checks passed
         </h2>
 
         <div className="mt-6 space-y-3">
@@ -70,9 +54,7 @@ export default function SubmissionDiagnosticPage() {
                 {item.passed ? "✓ " : "! "}
                 {item.name}
               </h3>
-              <p className="mt-1 text-sm text-slate-600">
-                {item.details}
-              </p>
+              <p className="mt-1 text-sm text-slate-600">{item.details}</p>
             </div>
           ))}
         </div>

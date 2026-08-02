@@ -10,14 +10,9 @@ import {
 export default function SystemDiagnosticPage() {
   const [runNumber, setRunNumber] = useState(0);
 
-  const report = useMemo(
-    () => diagnoseAdaptiveSystem(),
-    [runNumber],
-  );
+  const report = diagnoseAdaptiveSystem();
 
-  const categories = [...new Set(
-    report.checks.map((item) => item.category),
-  )];
+  const categories = [...new Set(report.checks.map((item) => item.category))];
 
   return (
     <main className="mx-auto max-w-7xl space-y-7 p-4 sm:p-8">
@@ -32,9 +27,7 @@ export default function SystemDiagnosticPage() {
           </p>
           <div className="mt-4 flex flex-wrap items-end justify-between gap-6">
             <div>
-              <h1 className="text-4xl font-bold">
-                Adaptive System Diagnostic
-              </h1>
+              <h1 className="text-4xl font-bold">Adaptive System Diagnostic</h1>
               <p className="mt-3 text-white/75">
                 {report.passed
                   ? "All required checks passed."
@@ -53,10 +46,7 @@ export default function SystemDiagnosticPage() {
         </div>
 
         <div className="grid gap-4 p-7 sm:grid-cols-2 lg:grid-cols-5 sm:p-10">
-          <Metric
-            label="Overall"
-            value={report.passed ? "PASS" : "FAIL"}
-          />
+          <Metric label="Overall" value={report.passed ? "PASS" : "FAIL"} />
           <Metric
             label="Reading questions"
             value={String(report.stats.readingQuestions)}
@@ -65,14 +55,8 @@ export default function SystemDiagnosticPage() {
             label="Math questions"
             value={String(report.stats.mathQuestions)}
           />
-          <Metric
-            label="Errors"
-            value={String(report.errors)}
-          />
-          <Metric
-            label="Warnings"
-            value={String(report.warnings)}
-          />
+          <Metric label="Errors" value={String(report.errors)} />
+          <Metric label="Warnings" value={String(report.warnings)} />
         </div>
       </section>
 
@@ -92,9 +76,7 @@ export default function SystemDiagnosticPage() {
                 <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">
                   Diagnostic group
                 </p>
-                <h2 className="mt-1 text-2xl font-bold">
-                  {category}
-                </h2>
+                <h2 className="mt-1 text-2xl font-bold">{category}</h2>
               </div>
               <p className="text-sm font-semibold text-slate-600">
                 {passed}/{checks.length} passed
@@ -151,13 +133,7 @@ export default function SystemDiagnosticPage() {
   );
 }
 
-function Metric({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border bg-slate-50 p-5">
       <p className="text-sm text-slate-500">{label}</p>
@@ -166,11 +142,7 @@ function Metric({
   );
 }
 
-function CheckRow({
-  check,
-}: {
-  check: SystemDiagnosticCheck;
-}) {
+function CheckRow({ check }: { check: SystemDiagnosticCheck }) {
   return (
     <div
       className={`rounded-2xl border p-5 ${

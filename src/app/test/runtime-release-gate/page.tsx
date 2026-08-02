@@ -1,10 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  useMemo,
-  useState,
-} from "react";
+import { useMemo, useState } from "react";
 import {
   diagnoseRuntimeReleaseGate,
   type RuntimeReleaseCheck,
@@ -21,18 +18,13 @@ const categories = [
 export default function RuntimeReleaseGatePage() {
   const [runNumber, setRunNumber] = useState(0);
 
-  const report = useMemo(
-    () => diagnoseRuntimeReleaseGate(),
-    [runNumber],
-  );
+  const report = diagnoseRuntimeReleaseGate();
 
   return (
     <main className="mx-auto max-w-6xl space-y-7 p-4 sm:p-8">
       <section
         className={`rounded-3xl p-8 text-white shadow-sm ${
-          report.passed
-            ? "bg-emerald-950"
-            : "bg-red-950"
+          report.passed ? "bg-emerald-950" : "bg-red-950"
         }`}
       >
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/70">
@@ -41,9 +33,7 @@ export default function RuntimeReleaseGatePage() {
 
         <div className="mt-4 flex flex-wrap items-end justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-bold">
-              Runtime Release Gate
-            </h1>
+            <h1 className="text-4xl font-bold">Runtime Release Gate</h1>
             <p className="mt-3 text-white/75">
               {report.passed
                 ? "All runtime reliability checks passed."
@@ -53,9 +43,7 @@ export default function RuntimeReleaseGatePage() {
 
           <button
             type="button"
-            onClick={() =>
-              setRunNumber((value) => value + 1)
-            }
+            onClick={() => setRunNumber((value) => value + 1)}
             className="rounded-xl border border-white/25 bg-white/10 px-5 py-3 font-semibold hover:bg-white/20"
           >
             Run again
@@ -67,9 +55,7 @@ export default function RuntimeReleaseGatePage() {
         const checks = report.checks.filter(
           (item) => item.category === category,
         );
-        const passed = checks.filter(
-          (item) => item.passed,
-        ).length;
+        const passed = checks.filter((item) => item.passed).length;
 
         return (
           <section
@@ -77,9 +63,7 @@ export default function RuntimeReleaseGatePage() {
             className="rounded-3xl border bg-white p-6 shadow-sm sm:p-8"
           >
             <div className="flex flex-wrap items-end justify-between gap-3">
-              <h2 className="text-2xl font-bold">
-                {category}
-              </h2>
+              <h2 className="text-2xl font-bold">{category}</h2>
               <p className="text-sm font-semibold text-slate-600">
                 {passed}/{checks.length} passed
               </p>
@@ -87,10 +71,7 @@ export default function RuntimeReleaseGatePage() {
 
             <div className="mt-6 space-y-3">
               {checks.map((item) => (
-                <CheckRow
-                  key={`${category}-${item.name}`}
-                  check={item}
-                />
+                <CheckRow key={`${category}-${item.name}`} check={item} />
               ))}
             </div>
           </section>
@@ -98,9 +79,7 @@ export default function RuntimeReleaseGatePage() {
       })}
 
       <section className="rounded-3xl border bg-slate-950 p-7 text-white">
-        <h2 className="text-2xl font-bold">
-          Runtime RC exit criteria
-        </h2>
+        <h2 className="text-2xl font-bold">Runtime RC exit criteria</h2>
 
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           {[
@@ -141,11 +120,7 @@ export default function RuntimeReleaseGatePage() {
   );
 }
 
-function CheckRow({
-  check,
-}: {
-  check: RuntimeReleaseCheck;
-}) {
+function CheckRow({ check }: { check: RuntimeReleaseCheck }) {
   return (
     <div
       className={`rounded-2xl border p-5 ${
@@ -157,18 +132,14 @@ function CheckRow({
       <div className="flex gap-4">
         <span
           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-bold text-white ${
-            check.passed
-              ? "bg-green-700"
-              : "bg-red-700"
+            check.passed ? "bg-green-700" : "bg-red-700"
           }`}
         >
           {check.passed ? "✓" : "!"}
         </span>
 
         <div>
-          <h3 className="font-bold">
-            {check.name}
-          </h3>
+          <h3 className="font-bold">{check.name}</h3>
           <p className="mt-1 text-sm leading-6 text-slate-600">
             {check.details}
           </p>

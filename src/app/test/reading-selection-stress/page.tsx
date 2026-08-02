@@ -5,18 +5,21 @@ import { runReadingSelectionStressTest } from "@/lib/adaptive/readingSelectionSt
 
 export default function Page() {
   const [run, setRun] = useState(0);
-  const report = useMemo(
-    () => runReadingSelectionStressTest(1000, 27),
-    [run],
-  );
+  const report = runReadingSelectionStressTest(1000, 27);
 
   return (
     <main className="mx-auto max-w-6xl space-y-7 p-5 sm:p-8">
-      <section className={`rounded-3xl p-8 text-white ${report.passed ? "bg-emerald-950" : "bg-red-950"}`}>
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/70">Sprint 53E</p>
+      <section
+        className={`rounded-3xl p-8 text-white ${report.passed ? "bg-emerald-950" : "bg-red-950"}`}
+      >
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/70">
+          Sprint 53E
+        </p>
         <div className="mt-4 flex flex-wrap items-end justify-between gap-5">
           <div>
-            <h1 className="text-4xl font-bold">Reading Multi-seed Stress Test</h1>
+            <h1 className="text-4xl font-bold">
+              Reading Multi-seed Stress Test
+            </h1>
             <p className="mt-3 text-white/75">
               {report.passed
                 ? `All ${report.totalRuns} module generations passed.`
@@ -73,8 +76,13 @@ export default function Page() {
           <h2 className="text-2xl font-bold text-red-950">Failures</h2>
           <div className="mt-5 space-y-3">
             {report.failures.slice(0, 100).map((failure, index) => (
-              <div key={`${failure.route}-${failure.seed}-${failure.code}-${index}`} className="rounded-xl bg-white p-4 text-sm">
-                <p className="font-bold">{failure.route} · {failure.code}</p>
+              <div
+                key={`${failure.route}-${failure.seed}-${failure.code}-${index}`}
+                className="rounded-xl bg-white p-4 text-sm"
+              >
+                <p className="font-bold">
+                  {failure.route} · {failure.code}
+                </p>
                 <p className="mt-1 text-slate-600">Seed: {failure.seed}</p>
                 <p className="mt-2">{failure.message}</p>
               </div>

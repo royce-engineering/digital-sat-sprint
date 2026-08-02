@@ -1,16 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  diagnoseAdaptiveCore,
-} from "@/lib/adaptive/core";
+import { diagnoseAdaptiveCore } from "@/lib/adaptive/core";
 
 export default function CoreDiagnosticPage() {
   const [runNumber, setRunNumber] = useState(0);
-  const report = useMemo(
-    () => diagnoseAdaptiveCore(),
-    [runNumber],
-  );
+  const report = diagnoseAdaptiveCore();
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-5 sm:p-8">
@@ -22,9 +17,7 @@ export default function CoreDiagnosticPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/70">
           Sprint 48A
         </p>
-        <h1 className="mt-3 text-4xl font-bold">
-          Shared Core Diagnostic
-        </h1>
+        <h1 className="mt-3 text-4xl font-bold">Shared Core Diagnostic</h1>
         <p className="mt-3 text-white/75">
           {report.passed
             ? "All additive core utilities passed."
@@ -66,9 +59,7 @@ export default function CoreDiagnosticPage() {
                 </span>
                 <div>
                   <h3 className="font-bold">{item.name}</h3>
-                  <p className="mt-1 text-sm text-slate-600">
-                    {item.details}
-                  </p>
+                  <p className="mt-1 text-sm text-slate-600">{item.details}</p>
                 </div>
               </div>
             </div>

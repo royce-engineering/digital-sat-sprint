@@ -9,10 +9,7 @@ import {
 
 export default function IdentifierDiagnosticPage() {
   const [runNumber, setRunNumber] = useState(0);
-  const report = useMemo(
-    () => diagnoseIdentifierMigration(),
-    [runNumber],
-  );
+  const report = diagnoseIdentifierMigration();
 
   return (
     <main className="mx-auto max-w-6xl space-y-7 p-4 sm:p-8">
@@ -48,10 +45,7 @@ export default function IdentifierDiagnosticPage() {
         </div>
 
         <div className="grid gap-4 p-7 sm:grid-cols-3 sm:p-10">
-          <Metric
-            label="Overall"
-            value={report.passed ? "PASS" : "FAIL"}
-          />
+          <Metric label="Overall" value={report.passed ? "PASS" : "FAIL"} />
           <Metric
             label="Questions checked"
             value={String(report.stats.questionsChecked)}
@@ -103,13 +97,7 @@ export default function IdentifierDiagnosticPage() {
   );
 }
 
-function Metric({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border bg-slate-50 p-5">
       <p className="text-sm text-slate-500">{label}</p>
@@ -118,11 +106,7 @@ function Metric({
   );
 }
 
-function CheckRow({
-  check,
-}: {
-  check: IdentifierDiagnosticCheck;
-}) {
+function CheckRow({ check }: { check: IdentifierDiagnosticCheck }) {
   return (
     <div
       className={`rounded-2xl border p-5 ${

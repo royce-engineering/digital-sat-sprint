@@ -105,11 +105,7 @@ function AdaptiveMathPageContent() {
       module2Seed: session.module2Seed,
       hardRouteThreshold: session.hardRouteThreshold,
     });
-  }, [
-    session?.module1Seed,
-    session?.module2Seed,
-    session?.hardRouteThreshold,
-  ]);
+  }, [session]);
 
   const activeQuestionIds = useMemo(() => {
     if (!session) return [];
@@ -130,33 +126,25 @@ function AdaptiveMathPageContent() {
     setSession((current) => {
       if (
         !current ||
-        (current.phase !== "module-1" &&
-          current.phase !== "module-1-review")
+        (current.phase !== "module-1" && current.phase !== "module-1-review")
       ) {
         return current;
       }
 
       const claim = claimModuleSubmission(
-        current.submissionState ??
-          createModuleSubmissionState(),
+        current.submissionState ?? createModuleSubmissionState(),
         "math-module-1",
       );
 
       if (!claim.allowed) return current;
 
-      const result = adaptiveExam.buildModule2(
-        current.answers,
-      );
+      const result = adaptiveExam.buildModule2(current.answers);
 
       return {
         ...current,
         phase: "module-2-transition",
         module2Route: result.route,
-        module2QuestionIds:
-          result.questions.map(
-            (question) =>
-              question.examId,
-          ),
+        module2QuestionIds: result.questions.map((question) => question.examId),
         currentIndex: 0,
         secondsRemaining: MODULE_SECONDS,
         timerDeadlineAt: undefined,
@@ -169,15 +157,13 @@ function AdaptiveMathPageContent() {
     setSession((current) => {
       if (
         !current ||
-        (current.phase !== "module-2" &&
-          current.phase !== "module-2-review")
+        (current.phase !== "module-2" && current.phase !== "module-2-review")
       ) {
         return current;
       }
 
       const claim = claimModuleSubmission(
-        current.submissionState ??
-          createModuleSubmissionState(),
+        current.submissionState ?? createModuleSubmissionState(),
         "math-module-2",
       );
 
@@ -195,34 +181,24 @@ function AdaptiveMathPageContent() {
   }, []);
 
   useEffect(() => {
-    if (
-      !session ||
-      !phaseUsesModuleTimer(session.phase)
-    ) {
+    if (!session || !phaseUsesModuleTimer(session.phase)) {
       return;
     }
 
     const tick = () => {
       setSession((current) => {
-        if (
-          !current ||
-          !phaseUsesModuleTimer(current.phase)
-        ) {
+        if (!current || !phaseUsesModuleTimer(current.phase)) {
           return current;
         }
 
         const timer = current.timerDeadlineAt
           ? readDeadlineTimer(current)
-          : startDeadlineTimer(
-              current.secondsRemaining,
-            );
+          : startDeadlineTimer(current.secondsRemaining);
 
         const timed = {
           ...current,
-          timerDeadlineAt:
-            timer.timerDeadlineAt,
-          secondsRemaining:
-            timer.secondsRemaining,
+          timerDeadlineAt: timer.timerDeadlineAt,
+          secondsRemaining: timer.secondsRemaining,
         };
 
         if (!timer.expired) return timed;
@@ -234,38 +210,30 @@ function AdaptiveMathPageContent() {
           if (!adaptiveExam) return timed;
 
           const claim = claimModuleSubmission(
-            current.submissionState ??
-              createModuleSubmissionState(),
+            current.submissionState ?? createModuleSubmissionState(),
             "math-module-1",
           );
 
           if (!claim.allowed) return timed;
 
-          const result =
-            adaptiveExam.buildModule2(
-              current.answers,
-            );
+          const result = adaptiveExam.buildModule2(current.answers);
 
           return {
             ...timed,
             phase: "module-2-transition",
             module2Route: result.route,
-            module2QuestionIds:
-              result.questions.map(
-                (question) =>
-                  question.examId,
-              ),
+            module2QuestionIds: result.questions.map(
+              (question) => question.examId,
+            ),
             currentIndex: 0,
-            secondsRemaining:
-              MODULE_SECONDS,
+            secondsRemaining: MODULE_SECONDS,
             timerDeadlineAt: undefined,
             submissionState: claim.state,
           };
         }
 
         const claim = claimModuleSubmission(
-          current.submissionState ??
-            createModuleSubmissionState(),
+          current.submissionState ?? createModuleSubmissionState(),
           "math-module-2",
         );
 
@@ -283,31 +251,19 @@ function AdaptiveMathPageContent() {
     };
 
     tick();
-    const timerId = window.setInterval(
-      tick,
-      1000,
-    );
+    const timerId = window.setInterval(tick, 1000);
 
-    return () =>
-      window.clearInterval(timerId);
-  }, [
-    session?.phase,
-    session?.timerDeadlineAt,
-    adaptiveExam,
-  ]);
+    return () => window.clearInterval(timerId);
+  }, [session, session?.phase, session?.timerDeadlineAt, adaptiveExam]);
 
   if (!session || !adaptiveExam) {
     return (
-      <main className="mx-auto max-w-5xl p-8">
-        Loading adaptive Math test…
-      </main>
+      <main className="mx-auto max-w-5xl p-8">Loading adaptive Math test…</main>
     );
   }
 
   const startExam = () => {
-    const timer = resetDeadlineTimer(
-      MODULE_SECONDS,
-    );
+    const timer = resetDeadlineTimer(MODULE_SECONDS);
 
     setSession({
       ...session,
@@ -319,12 +275,9 @@ function AdaptiveMathPageContent() {
       module2Route: undefined,
       answers: {},
       currentIndex: 0,
-      secondsRemaining:
-        timer.secondsRemaining,
-      timerDeadlineAt:
-        timer.timerDeadlineAt,
-      submissionState:
-        createModuleSubmissionState(),
+      secondsRemaining: timer.secondsRemaining,
+      timerDeadlineAt: timer.timerDeadlineAt,
+      submissionState: createModuleSubmissionState(),
       startedAt: Date.now(),
     });
   };
@@ -341,12 +294,10 @@ function AdaptiveMathPageContent() {
           <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">
             Sprint 46C-1
           </p>
-          <h1 className="mt-2 text-3xl font-bold">
-            Adaptive Math Test
-          </h1>
+          <h1 className="mt-2 text-3xl font-bold">Adaptive Math Test</h1>
           <p className="mt-4 text-gray-600">
-            Complete Module 1, review your answers, and submit it.
-            Module 2 will then be generated automatically.
+            Complete Module 1, review your answers, and submit it. Module 2 will
+            then be generated automatically.
           </p>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -354,10 +305,7 @@ function AdaptiveMathPageContent() {
               label="Module 1"
               value={`${adaptiveExam.module1.length} questions`}
             />
-            <InfoCard
-              label="Time"
-              value={`${MODULE_SECONDS / 60} minutes`}
-            />
+            <InfoCard label="Time" value={`${MODULE_SECONDS / 60} minutes`} />
             <InfoCard label="Format" value="Adaptive" />
           </div>
 
@@ -380,29 +328,22 @@ function AdaptiveMathPageContent() {
           <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
             Module 1 submitted
           </p>
-          <h1 className="mt-3 text-3xl font-bold">
-            Module 2 is ready
-          </h1>
+          <h1 className="mt-3 text-3xl font-bold">Module 2 is ready</h1>
           <p className="mt-4 text-gray-600">
-            Your next module has been selected from your Module 1
-            performance.
+            Your next module has been selected from your Module 1 performance.
           </p>
 
           <button
             type="button"
             onClick={() => {
-              const timer = resetDeadlineTimer(
-                MODULE_SECONDS,
-              );
+              const timer = resetDeadlineTimer(MODULE_SECONDS);
 
               setSession({
                 ...session,
                 phase: "module-2",
                 currentIndex: 0,
-                secondsRemaining:
-                  timer.secondsRemaining,
-                timerDeadlineAt:
-                  timer.timerDeadlineAt,
+                secondsRemaining: timer.secondsRemaining,
+                timerDeadlineAt: timer.timerDeadlineAt,
               });
             }}
             className="mt-8 rounded-lg bg-blue-700 px-6 py-3 font-semibold text-white hover:bg-blue-800"
@@ -421,21 +362,14 @@ function AdaptiveMathPageContent() {
     ]);
 
     const correct = allQuestions.filter((question) =>
-      isScoreAnswerCorrect(
-        question,
-        session.answers[question.examId],
-      ),
+      isScoreAnswerCorrect(question, session.answers[question.examId]),
     ).length;
 
     const unansweredCount = allQuestions.filter(
-      (question) =>
-        !answered(question, session.answers[question.examId]),
+      (question) => !answered(question, session.answers[question.examId]),
     ).length;
 
-    const domainRows = buildDomainRows(
-      allQuestions,
-      session.answers,
-    );
+    const domainRows = buildDomainRows(allQuestions, session.answers);
 
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-8">
@@ -456,10 +390,7 @@ function AdaptiveMathPageContent() {
                 (correct / Math.max(1, allQuestions.length)) * 100,
               )}%`}
             />
-            <InfoCard
-              label="Unanswered"
-              value={String(unansweredCount)}
-            />
+            <InfoCard label="Unanswered" value={String(unansweredCount)} />
             <InfoCard
               label="Module 2 route"
               value={session.module2Route ?? "—"}
@@ -486,9 +417,7 @@ function AdaptiveMathPageContent() {
                     <td className="p-3 font-medium">{row.label}</td>
                     <td className="p-3">{row.correct}</td>
                     <td className="p-3">{row.total}</td>
-                    <td className="p-3">
-                      {Math.round(row.accuracy * 100)}%
-                    </td>
+                    <td className="p-3">{Math.round(row.accuracy * 100)}%</td>
                   </tr>
                 ))}
               </tbody>
@@ -508,12 +437,10 @@ function AdaptiveMathPageContent() {
   }
 
   const isReview =
-    session.phase === "module-1-review" ||
-    session.phase === "module-2-review";
+    session.phase === "module-1-review" || session.phase === "module-2-review";
 
   if (isReview) {
-    const moduleNumber =
-      session.phase === "module-1-review" ? 1 : 2;
+    const moduleNumber = session.phase === "module-1-review" ? 1 : 2;
 
     return (
       <ReviewScreen
@@ -524,18 +451,14 @@ function AdaptiveMathPageContent() {
           setSession({
             ...session,
             currentIndex: index,
-            phase:
-              moduleNumber === 1 ? "module-1" : "module-2",
+            phase: moduleNumber === 1 ? "module-1" : "module-2",
           })
         }
-        onSubmit={
-          moduleNumber === 1 ? submitModule1 : submitModule2
-        }
+        onSubmit={moduleNumber === 1 ? submitModule1 : submitModule2}
         onBack={() =>
           setSession({
             ...session,
-            phase:
-              moduleNumber === 1 ? "module-1" : "module-2",
+            phase: moduleNumber === 1 ? "module-1" : "module-2",
           })
         }
       />
@@ -552,8 +475,8 @@ function AdaptiveMathPageContent() {
             No Math questions were generated
           </h1>
           <p className="mt-2 text-gray-600">
-            Run the Math diagnostics and verify that every blueprint
-            category has enough questions.
+            Run the Math diagnostics and verify that every blueprint category
+            has enough questions.
           </p>
           <button
             type="button"
@@ -576,8 +499,7 @@ function AdaptiveMathPageContent() {
     setSession((current) => {
       if (!current) return current;
 
-      const existing =
-        current.answers[currentQuestion.examId] ?? emptyAnswer();
+      const existing = current.answers[currentQuestion.examId] ?? emptyAnswer();
 
       return {
         ...current,
@@ -613,8 +535,7 @@ function AdaptiveMathPageContent() {
         <section className="rounded-2xl border bg-white p-6 shadow-sm sm:p-8">
           <div className="flex items-center justify-between gap-4">
             <p className="font-semibold">
-              Question {session.currentIndex + 1} of{" "}
-              {activeQuestions.length}
+              Question {session.currentIndex + 1} of {activeQuestions.length}
             </p>
 
             <button
@@ -680,15 +601,11 @@ function AdaptiveMathPageContent() {
                     type="radio"
                     name={currentQuestion.id}
                     checked={currentAnswer.selected === index}
-                    onChange={() =>
-                      updateAnswer({ selected: index })
-                    }
+                    onChange={() => updateAnswer({ selected: index })}
                     className="mt-1"
                   />
                   <span>
-                    <strong>
-                      {String.fromCharCode(65 + index)}.
-                    </strong>{" "}
+                    <strong>{String.fromCharCode(65 + index)}.</strong>{" "}
                     {choice.text}
                   </span>
                 </label>
@@ -703,10 +620,7 @@ function AdaptiveMathPageContent() {
               onClick={() =>
                 setSession({
                   ...session,
-                  currentIndex: Math.max(
-                    0,
-                    session.currentIndex - 1,
-                  ),
+                  currentIndex: Math.max(0, session.currentIndex - 1),
                 })
               }
               className="rounded-lg border px-5 py-2 font-semibold disabled:cursor-not-allowed disabled:opacity-40"
@@ -734,10 +648,7 @@ function AdaptiveMathPageContent() {
               <button
                 type="button"
                 onClick={() => {
-                  if (
-                    session.currentIndex <
-                    activeQuestions.length - 1
-                  ) {
+                  if (session.currentIndex < activeQuestions.length - 1) {
                     setSession({
                       ...session,
                       currentIndex: session.currentIndex + 1,
@@ -754,8 +665,7 @@ function AdaptiveMathPageContent() {
                 }}
                 className="rounded-lg bg-blue-700 px-5 py-2 font-semibold text-white hover:bg-blue-800"
               >
-                {session.currentIndex <
-                activeQuestions.length - 1
+                {session.currentIndex < activeQuestions.length - 1
                   ? "Next"
                   : "Review module"}
               </button>
@@ -823,13 +733,7 @@ export default function AdaptiveMathPage() {
   );
 }
 
-function InfoCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function InfoCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border bg-gray-50 p-4">
       <p className="text-sm text-gray-500">{label}</p>
@@ -854,8 +758,7 @@ function ReviewScreen({
   onBack: () => void;
 }) {
   const unansweredCount = questions.filter(
-    (question) =>
-      !answered(question, answers[question.examId]),
+    (question) => !answered(question, answers[question.examId]),
   ).length;
 
   const flaggedCount = questions.filter(
@@ -871,10 +774,7 @@ function ReviewScreen({
         </p>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <InfoCard
-            label="Unanswered"
-            value={String(unansweredCount)}
-          />
+          <InfoCard label="Unanswered" value={String(unansweredCount)} />
           <InfoCard label="Flagged" value={String(flaggedCount)} />
         </div>
 
@@ -928,16 +828,11 @@ function buildDomainRows(
   questions: ExamQuestion[],
   answers: Record<string, ScoreAnswer>,
 ) {
-  const groups = new Map<
-    string,
-    { correct: number; total: number }
-  >();
+  const groups = new Map<string, { correct: number; total: number }>();
 
   for (const question of questions) {
     const label =
-      question.blueprint?.domain ??
-      question.domain ??
-      "Unclassified";
+      question.blueprint?.domain ?? question.domain ?? "Unclassified";
 
     const row = groups.get(label) ?? {
       correct: 0,
@@ -946,12 +841,7 @@ function buildDomainRows(
 
     row.total += 1;
 
-    if (
-      isScoreAnswerCorrect(
-        question,
-        answers[question.examId],
-      )
-    ) {
+    if (isScoreAnswerCorrect(question, answers[question.examId])) {
       row.correct += 1;
     }
 

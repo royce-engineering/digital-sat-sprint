@@ -97,7 +97,8 @@ function AdaptiveReadingPageContent() {
   }, [session]);
 
   useEffect(() => {
-    if (!session || session.phase !== "results" || session.historyRecordId) return;
+    if (!session || session.phase !== "results" || session.historyRecordId)
+      return;
 
     const record = saveReadingSessionAttempt(session);
     if (!record) return;
@@ -116,7 +117,7 @@ function AdaptiveReadingPageContent() {
       module2Seed: session.module2Seed,
       hardRouteThreshold: session.hardRouteThreshold,
     });
-  }, [session?.module1Seed, session?.module2Seed, session?.hardRouteThreshold]);
+  }, [session]);
 
   const activeQuestionIds = useMemo(() => {
     if (!session) return [];
@@ -126,7 +127,10 @@ function AdaptiveReadingPageContent() {
   }, [session]);
 
   const activeQuestions = useMemo(
-    () => activeQuestionIds.map(questionFromId).filter((q): q is ExamQuestion => Boolean(q)),
+    () =>
+      activeQuestionIds
+        .map(questionFromId)
+        .filter((q): q is ExamQuestion => Boolean(q)),
     [activeQuestionIds],
   );
 
@@ -136,31 +140,25 @@ function AdaptiveReadingPageContent() {
     setSession((current) => {
       if (
         !current ||
-        (current.phase !== "module-1" &&
-          current.phase !== "module-1-review")
+        (current.phase !== "module-1" && current.phase !== "module-1-review")
       ) {
         return current;
       }
 
       const claim = claimModuleSubmission(
-        current.submissionState ??
-          createModuleSubmissionState(),
+        current.submissionState ?? createModuleSubmissionState(),
         "reading-module-1",
       );
 
       if (!claim.allowed) return current;
 
-      const result = adaptiveExam.buildModule2(
-        current.answers,
-      );
+      const result = adaptiveExam.buildModule2(current.answers);
 
       return {
         ...current,
         phase: "module-2-transition",
         module2Route: result.route,
-        module2QuestionIds: result.questions.map(
-          (question) => question.examId,
-        ),
+        module2QuestionIds: result.questions.map((question) => question.examId),
         currentIndex: 0,
         secondsRemaining: MODULE_SECONDS,
         timerDeadlineAt: undefined,
@@ -173,15 +171,13 @@ function AdaptiveReadingPageContent() {
     setSession((current) => {
       if (
         !current ||
-        (current.phase !== "module-2" &&
-          current.phase !== "module-2-review")
+        (current.phase !== "module-2" && current.phase !== "module-2-review")
       ) {
         return current;
       }
 
       const claim = claimModuleSubmission(
-        current.submissionState ??
-          createModuleSubmissionState(),
+        current.submissionState ?? createModuleSubmissionState(),
         "reading-module-2",
       );
 
@@ -199,34 +195,24 @@ function AdaptiveReadingPageContent() {
   }, []);
 
   useEffect(() => {
-    if (
-      !session ||
-      !phaseUsesModuleTimer(session.phase)
-    ) {
+    if (!session || !phaseUsesModuleTimer(session.phase)) {
       return;
     }
 
     const tick = () => {
       setSession((current) => {
-        if (
-          !current ||
-          !phaseUsesModuleTimer(current.phase)
-        ) {
+        if (!current || !phaseUsesModuleTimer(current.phase)) {
           return current;
         }
 
         const timer = current.timerDeadlineAt
           ? readDeadlineTimer(current)
-          : startDeadlineTimer(
-              current.secondsRemaining,
-            );
+          : startDeadlineTimer(current.secondsRemaining);
 
         const timed = {
           ...current,
-          timerDeadlineAt:
-            timer.timerDeadlineAt,
-          secondsRemaining:
-            timer.secondsRemaining,
+          timerDeadlineAt: timer.timerDeadlineAt,
+          secondsRemaining: timer.secondsRemaining,
         };
 
         if (!timer.expired) return timed;
@@ -238,38 +224,30 @@ function AdaptiveReadingPageContent() {
           if (!adaptiveExam) return timed;
 
           const claim = claimModuleSubmission(
-            current.submissionState ??
-              createModuleSubmissionState(),
+            current.submissionState ?? createModuleSubmissionState(),
             "reading-module-1",
           );
 
           if (!claim.allowed) return timed;
 
-          const result =
-            adaptiveExam.buildModule2(
-              current.answers,
-            );
+          const result = adaptiveExam.buildModule2(current.answers);
 
           return {
             ...timed,
             phase: "module-2-transition",
             module2Route: result.route,
-            module2QuestionIds:
-              result.questions.map(
-                (question) =>
-                  question.examId,
-              ),
+            module2QuestionIds: result.questions.map(
+              (question) => question.examId,
+            ),
             currentIndex: 0,
-            secondsRemaining:
-              MODULE_SECONDS,
+            secondsRemaining: MODULE_SECONDS,
             timerDeadlineAt: undefined,
             submissionState: claim.state,
           };
         }
 
         const claim = claimModuleSubmission(
-          current.submissionState ??
-            createModuleSubmissionState(),
+          current.submissionState ?? createModuleSubmissionState(),
           "reading-module-2",
         );
 
@@ -287,28 +265,20 @@ function AdaptiveReadingPageContent() {
     };
 
     tick();
-    const timerId = window.setInterval(
-      tick,
-      1000,
-    );
+    const timerId = window.setInterval(tick, 1000);
 
-    return () =>
-      window.clearInterval(timerId);
-  }, [
-    session?.phase,
-    session?.timerDeadlineAt,
-    adaptiveExam,
-  ]);
+    return () => window.clearInterval(timerId);
+  }, [session, session?.phase, session?.timerDeadlineAt, adaptiveExam]);
 
   if (!session || !adaptiveExam) {
-    return <main className="mx-auto max-w-5xl p-8">Loading adaptive test…</main>;
+    return (
+      <main className="mx-auto max-w-5xl p-8">Loading adaptive test…</main>
+    );
   }
 
   const startExam = () => {
     const questions = adaptiveExam.module1;
-    const timer = resetDeadlineTimer(
-      MODULE_SECONDS,
-    );
+    const timer = resetDeadlineTimer(MODULE_SECONDS);
 
     setSession({
       ...session,
@@ -319,12 +289,9 @@ function AdaptiveReadingPageContent() {
       historyRecordId: undefined,
       answers: {},
       currentIndex: 0,
-      secondsRemaining:
-        timer.secondsRemaining,
-      timerDeadlineAt:
-        timer.timerDeadlineAt,
-      submissionState:
-        createModuleSubmissionState(),
+      secondsRemaining: timer.secondsRemaining,
+      timerDeadlineAt: timer.timerDeadlineAt,
+      submissionState: createModuleSubmissionState(),
       startedAt: Date.now(),
     });
   };
@@ -339,13 +306,21 @@ function AdaptiveReadingPageContent() {
     return (
       <main className="mx-auto max-w-3xl p-8">
         <section className="rounded-2xl border bg-white p-8 shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Sprint 45A</p>
-          <h1 className="mt-2 text-3xl font-bold">Adaptive Reading & Writing Test</h1>
+          <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">
+            Sprint 45A
+          </p>
+          <h1 className="mt-2 text-3xl font-bold">
+            Adaptive Reading & Writing Test
+          </h1>
           <p className="mt-4 text-gray-600">
-            Complete Module 1, review your answers, and submit. Your Module 2 route is then selected automatically.
+            Complete Module 1, review your answers, and submit. Your Module 2
+            route is then selected automatically.
           </p>
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            <InfoCard label="Module 1" value={`${adaptiveExam.module1.length} questions`} />
+            <InfoCard
+              label="Module 1"
+              value={`${adaptiveExam.module1.length} questions`}
+            />
             <InfoCard label="Time" value={`${MODULE_SECONDS / 60} minutes`} />
             <InfoCard label="Routing" value="Easy or Hard" />
           </div>
@@ -365,25 +340,23 @@ function AdaptiveReadingPageContent() {
     return (
       <main className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center p-8">
         <section className="w-full rounded-2xl border bg-white p-10 text-center shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">Module 1 submitted</p>
+          <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+            Module 1 submitted
+          </p>
           <h1 className="mt-3 text-3xl font-bold">Module 2 is ready</h1>
           <p className="mt-4 text-gray-600">Your adaptive route:</p>
           <p className="mt-2 text-4xl font-black">{session.module2Route}</p>
           <button
             type="button"
             onClick={() => {
-              const timer = resetDeadlineTimer(
-                MODULE_SECONDS,
-              );
+              const timer = resetDeadlineTimer(MODULE_SECONDS);
 
               setSession({
                 ...session,
                 phase: "module-2",
                 currentIndex: 0,
-                secondsRemaining:
-                  timer.secondsRemaining,
-                timerDeadlineAt:
-                  timer.timerDeadlineAt,
+                secondsRemaining: timer.secondsRemaining,
+                timerDeadlineAt: timer.timerDeadlineAt,
               });
             }}
             className="mt-8 rounded-lg bg-blue-700 px-6 py-3 font-semibold text-white hover:bg-blue-800"
@@ -396,7 +369,10 @@ function AdaptiveReadingPageContent() {
   }
 
   if (session.phase === "results") {
-    const allQuestions = [...session.module1QuestionIds, ...session.module2QuestionIds]
+    const allQuestions = [
+      ...session.module1QuestionIds,
+      ...session.module2QuestionIds,
+    ]
       .map(questionFromId)
       .filter((q): q is ExamQuestion => Boolean(q));
     const correct = allQuestions.filter((question) =>
@@ -410,11 +386,19 @@ function AdaptiveReadingPageContent() {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-8">
         <section className="rounded-2xl border bg-white p-8 shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Test complete</p>
+          <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">
+            Test complete
+          </p>
           <h1 className="mt-2 text-3xl font-bold">Reading & Writing Results</h1>
           <div className="mt-6 grid gap-4 sm:grid-cols-4">
-            <InfoCard label="Correct" value={`${correct}/${allQuestions.length}`} />
-            <InfoCard label="Accuracy" value={`${Math.round((correct / Math.max(1, allQuestions.length)) * 100)}%`} />
+            <InfoCard
+              label="Correct"
+              value={`${correct}/${allQuestions.length}`}
+            />
+            <InfoCard
+              label="Accuracy"
+              value={`${Math.round((correct / Math.max(1, allQuestions.length)) * 100)}%`}
+            />
             <InfoCard label="Unanswered" value={String(unansweredCount)} />
             <InfoCard label="Module 2" value={session.module2Route ?? "—"} />
           </div>
@@ -455,7 +439,11 @@ function AdaptiveReadingPageContent() {
             Start a new test
           </button>
           <Link
-            href={session.historyRecordId ? `/test/history/${session.historyRecordId}` : "/test/history"}
+            href={
+              session.historyRecordId
+                ? `/test/history/${session.historyRecordId}`
+                : "/test/history"
+            }
             className="rounded-lg border px-6 py-3 font-semibold hover:bg-gray-50"
           >
             View saved result
@@ -465,7 +453,8 @@ function AdaptiveReadingPageContent() {
     );
   }
 
-  const isReview = session.phase === "module-1-review" || session.phase === "module-2-review";
+  const isReview =
+    session.phase === "module-1-review" || session.phase === "module-2-review";
 
   if (isReview) {
     const moduleNumber = session.phase === "module-1-review" ? 1 : 2;
@@ -483,7 +472,10 @@ function AdaptiveReadingPageContent() {
         }
         onSubmit={moduleNumber === 1 ? submitModule1 : submitModule2}
         onBack={() =>
-          setSession({ ...session, phase: moduleNumber === 1 ? "module-1" : "module-2" })
+          setSession({
+            ...session,
+            phase: moduleNumber === 1 ? "module-1" : "module-2",
+          })
         }
       />
     );
@@ -495,14 +487,22 @@ function AdaptiveReadingPageContent() {
       <main className="mx-auto max-w-3xl p-8">
         <section className="rounded-xl border p-6">
           <h1 className="text-2xl font-bold">No questions were generated</h1>
-          <p className="mt-2 text-gray-600">Check the blueprint diagnostic before starting the adaptive test.</p>
-          <button onClick={restartExam} className="mt-5 rounded-lg bg-blue-700 px-5 py-2 text-white">Reset</button>
+          <p className="mt-2 text-gray-600">
+            Check the blueprint diagnostic before starting the adaptive test.
+          </p>
+          <button
+            onClick={restartExam}
+            className="mt-5 rounded-lg bg-blue-700 px-5 py-2 text-white"
+          >
+            Reset
+          </button>
         </section>
       </main>
     );
   }
 
-  const currentAnswer = session.answers[currentQuestion.examId] ?? emptyAnswer();
+  const currentAnswer =
+    session.answers[currentQuestion.examId] ?? emptyAnswer();
   const moduleNumber = session.phase === "module-1" ? 1 : 2;
 
   const updateAnswer = (patch: Partial<ScoreAnswer>) => {
@@ -532,14 +532,18 @@ function AdaptiveReadingPageContent() {
         </div>
         <div className="text-right">
           <p className="text-sm text-gray-500">Time remaining</p>
-          <p className="font-mono text-2xl font-bold">{formatTime(session.secondsRemaining)}</p>
+          <p className="font-mono text-2xl font-bold">
+            {formatTime(session.secondsRemaining)}
+          </p>
         </div>
       </header>
 
       <div className="grid gap-5 lg:grid-cols-[1fr_290px]">
         <section className="rounded-2xl border bg-white p-6 shadow-sm sm:p-8">
           <div className="flex items-center justify-between gap-4">
-            <p className="font-semibold">Question {session.currentIndex + 1} of {activeQuestions.length}</p>
+            <p className="font-semibold">
+              Question {session.currentIndex + 1} of {activeQuestions.length}
+            </p>
             <button
               type="button"
               onClick={() => updateAnswer({ flagged: !currentAnswer.flagged })}
@@ -555,12 +559,16 @@ function AdaptiveReadingPageContent() {
             </div>
           )}
 
-          <h2 className="mt-6 text-lg font-semibold leading-7">{currentQuestion.prompt}</h2>
+          <h2 className="mt-6 text-lg font-semibold leading-7">
+            {currentQuestion.prompt}
+          </h2>
 
           {currentQuestion.questionType === "student-response" ? (
             <input
               value={currentAnswer.typedAnswer ?? ""}
-              onChange={(event) => updateAnswer({ typedAnswer: event.target.value })}
+              onChange={(event) =>
+                updateAnswer({ typedAnswer: event.target.value })
+              }
               className="mt-5 w-full rounded-lg border px-4 py-3"
               placeholder="Enter your answer"
             />
@@ -578,7 +586,10 @@ function AdaptiveReadingPageContent() {
                     onChange={() => updateAnswer({ selected: index })}
                     className="mt-1"
                   />
-                  <span><strong>{String.fromCharCode(65 + index)}.</strong> {choice.text}</span>
+                  <span>
+                    <strong>{String.fromCharCode(65 + index)}.</strong>{" "}
+                    {choice.text}
+                  </span>
                 </label>
               ))}
             </div>
@@ -588,7 +599,12 @@ function AdaptiveReadingPageContent() {
             <button
               type="button"
               disabled={session.currentIndex === 0}
-              onClick={() => setSession({ ...session, currentIndex: Math.max(0, session.currentIndex - 1) })}
+              onClick={() =>
+                setSession({
+                  ...session,
+                  currentIndex: Math.max(0, session.currentIndex - 1),
+                })
+              }
               className="rounded-lg border px-5 py-2 font-semibold disabled:cursor-not-allowed disabled:opacity-40"
             >
               Previous
@@ -596,7 +612,15 @@ function AdaptiveReadingPageContent() {
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => setSession({ ...session, phase: moduleNumber === 1 ? "module-1-review" : "module-2-review" })}
+                onClick={() =>
+                  setSession({
+                    ...session,
+                    phase:
+                      moduleNumber === 1
+                        ? "module-1-review"
+                        : "module-2-review",
+                  })
+                }
                 className="rounded-lg border px-5 py-2 font-semibold"
               >
                 Review
@@ -605,14 +629,25 @@ function AdaptiveReadingPageContent() {
                 type="button"
                 onClick={() => {
                   if (session.currentIndex < activeQuestions.length - 1) {
-                    setSession({ ...session, currentIndex: session.currentIndex + 1 });
+                    setSession({
+                      ...session,
+                      currentIndex: session.currentIndex + 1,
+                    });
                   } else {
-                    setSession({ ...session, phase: moduleNumber === 1 ? "module-1-review" : "module-2-review" });
+                    setSession({
+                      ...session,
+                      phase:
+                        moduleNumber === 1
+                          ? "module-1-review"
+                          : "module-2-review",
+                    });
                   }
                 }}
                 className="rounded-lg bg-blue-700 px-5 py-2 font-semibold text-white hover:bg-blue-800"
               >
-                {session.currentIndex < activeQuestions.length - 1 ? "Next" : "Review module"}
+                {session.currentIndex < activeQuestions.length - 1
+                  ? "Next"
+                  : "Review module"}
               </button>
             </div>
           </div>
@@ -628,7 +663,9 @@ function AdaptiveReadingPageContent() {
                 <button
                   type="button"
                   key={question.id}
-                  onClick={() => setSession({ ...session, currentIndex: index })}
+                  onClick={() =>
+                    setSession({ ...session, currentIndex: index })
+                  }
                   className={`aspect-square rounded-lg border text-sm font-semibold ${index === session.currentIndex ? "border-blue-700 ring-2 ring-blue-200" : ""} ${value?.flagged ? "bg-amber-100" : isAnswered ? "bg-green-50" : "bg-white"}`}
                 >
                   {index + 1}
@@ -637,8 +674,14 @@ function AdaptiveReadingPageContent() {
             })}
           </div>
           <div className="mt-5 space-y-2 text-xs text-gray-600">
-            <p><span className="mr-2 inline-block h-3 w-3 rounded border bg-green-50" />Answered</p>
-            <p><span className="mr-2 inline-block h-3 w-3 rounded border bg-amber-100" />Flagged</p>
+            <p>
+              <span className="mr-2 inline-block h-3 w-3 rounded border bg-green-50" />
+              Answered
+            </p>
+            <p>
+              <span className="mr-2 inline-block h-3 w-3 rounded border bg-amber-100" />
+              Flagged
+            </p>
           </div>
         </aside>
       </div>
@@ -678,14 +721,20 @@ function ReviewScreen({
   onSubmit: () => void;
   onBack: () => void;
 }) {
-  const unansweredCount = questions.filter((question) => !answered(question, answers[question.examId])).length;
-  const flaggedCount = questions.filter((question) => answers[question.examId]?.flagged).length;
+  const unansweredCount = questions.filter(
+    (question) => !answered(question, answers[question.examId]),
+  ).length;
+  const flaggedCount = questions.filter(
+    (question) => answers[question.examId]?.flagged,
+  ).length;
 
   return (
     <main className="mx-auto max-w-4xl p-8">
       <section className="rounded-2xl border bg-white p-8 shadow-sm">
         <h1 className="text-3xl font-bold">{title}</h1>
-        <p className="mt-2 text-gray-600">Review unanswered or flagged questions before submitting.</p>
+        <p className="mt-2 text-gray-600">
+          Review unanswered or flagged questions before submitting.
+        </p>
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <InfoCard label="Unanswered" value={String(unansweredCount)} />
           <InfoCard label="Flagged" value={String(flaggedCount)} />
@@ -707,8 +756,20 @@ function ReviewScreen({
           })}
         </div>
         <div className="mt-8 flex flex-wrap justify-between gap-3 border-t pt-5">
-          <button type="button" onClick={onBack} className="rounded-lg border px-5 py-2 font-semibold">Return to questions</button>
-          <button type="button" onClick={onSubmit} className="rounded-lg bg-blue-700 px-5 py-2 font-semibold text-white hover:bg-blue-800">Submit module</button>
+          <button
+            type="button"
+            onClick={onBack}
+            className="rounded-lg border px-5 py-2 font-semibold"
+          >
+            Return to questions
+          </button>
+          <button
+            type="button"
+            onClick={onSubmit}
+            className="rounded-lg bg-blue-700 px-5 py-2 font-semibold text-white hover:bg-blue-800"
+          >
+            Submit module
+          </button>
         </div>
       </section>
     </main>
@@ -722,10 +783,12 @@ function buildDomainRows(
   const groups = new Map<string, { correct: number; total: number }>();
 
   for (const question of questions) {
-    const label = question.blueprint?.domain ?? question.domain ?? "Unclassified";
+    const label =
+      question.blueprint?.domain ?? question.domain ?? "Unclassified";
     const row = groups.get(label) ?? { correct: 0, total: 0 };
     row.total += 1;
-    if (isScoreAnswerCorrect(question, answers[question.examId])) row.correct += 1;
+    if (isScoreAnswerCorrect(question, answers[question.examId]))
+      row.correct += 1;
     groups.set(label, row);
   }
 

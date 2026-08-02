@@ -1,32 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  diagnoseSessionRecovery,
-} from "@/lib/adaptive/runtime/sessionRecoveryDiagnostics";
+import { diagnoseSessionRecovery } from "@/lib/adaptive/runtime/sessionRecoveryDiagnostics";
 
 export default function SessionRecoveryDiagnosticPage() {
   const [runNumber, setRunNumber] = useState(0);
-  const report = useMemo(
-    () => diagnoseSessionRecovery(),
-    [runNumber],
-  );
+  const report = diagnoseSessionRecovery();
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-5 sm:p-8">
       <section
         className={`rounded-3xl p-8 text-white ${
-          report.passed
-            ? "bg-emerald-950"
-            : "bg-red-950"
+          report.passed ? "bg-emerald-950" : "bg-red-950"
         }`}
       >
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/70">
           Sprint 50C
         </p>
-        <h1 className="mt-3 text-4xl font-bold">
-          Section Session Recovery
-        </h1>
+        <h1 className="mt-3 text-4xl font-bold">Section Session Recovery</h1>
         <p className="mt-3 text-white/75">
           {report.passed
             ? "All recovery checks passed."
@@ -34,9 +25,7 @@ export default function SessionRecoveryDiagnosticPage() {
         </p>
         <button
           type="button"
-          onClick={() =>
-            setRunNumber((value) => value + 1)
-          }
+          onClick={() => setRunNumber((value) => value + 1)}
           className="mt-6 rounded-xl border border-white/25 px-5 py-3 font-semibold"
         >
           Run again
@@ -45,12 +34,8 @@ export default function SessionRecoveryDiagnosticPage() {
 
       <section className="rounded-3xl border bg-white p-6 shadow-sm sm:p-8">
         <h2 className="text-2xl font-bold">
-          {
-            report.checks.filter(
-              (item) => item.passed,
-            ).length
-          }
-          /{report.checks.length} checks passed
+          {report.checks.filter((item) => item.passed).length}/
+          {report.checks.length} checks passed
         </h2>
 
         <div className="mt-6 space-y-3">
@@ -67,9 +52,7 @@ export default function SessionRecoveryDiagnosticPage() {
                 {item.passed ? "✓ " : "! "}
                 {item.name}
               </h3>
-              <p className="mt-1 text-sm text-slate-600">
-                {item.details}
-              </p>
+              <p className="mt-1 text-sm text-slate-600">{item.details}</p>
             </div>
           ))}
         </div>
