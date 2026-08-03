@@ -6,6 +6,9 @@ out
 *.log
 .DS_Store
 *.md
+*.py
 /playwright-report/
 /test-results/
 /blob-report/
+# TypeScript build cache
+*.tsbuildinfo

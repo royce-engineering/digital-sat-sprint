@@ -103,6 +103,11 @@ function FullSatControllerPageContent() {
     isReadingSessionComplete(readingSession);
   const mathComplete =
     isMathSessionComplete(mathSession);
+  const mathStarted =
+    Boolean(
+      mathSession &&
+        mathSession.phase !== "intro",
+    );
 
   useEffect(() => {
     if (!state) return;
@@ -112,6 +117,7 @@ function FullSatControllerPageContent() {
       {
         readingComplete,
         mathComplete,
+        mathStarted,
       },
     );
 
@@ -121,7 +127,12 @@ function FullSatControllerPageContent() {
     ) {
       setState(reconciled);
     }
-  }, [state, readingComplete, mathComplete]);
+  }, [
+    state,
+    readingComplete,
+    mathComplete,
+    mathStarted,
+  ]);
 
   const breakRemaining = useMemo(
     () =>
@@ -133,7 +144,11 @@ function FullSatControllerPageContent() {
 
   if (!state) {
     return (
-      <main className="mx-auto max-w-5xl p-8">
+      <main
+        className="mx-auto max-w-5xl p-8"
+        aria-live="polite"
+        aria-busy="true"
+      >
         Loading full SAT test…
       </main>
     );
@@ -162,6 +177,7 @@ function FullSatControllerPageContent() {
       reconcileFullTestState(next, {
         readingComplete,
         mathComplete,
+        mathStarted,
       }),
     );
   };
@@ -208,7 +224,11 @@ function FullSatControllerPageContent() {
           </div>
 
           {hasSectionProgress && (
-            <div className="mt-7 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950">
+            <div
+              role="status"
+              aria-live="polite"
+              className="mt-7 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950"
+            >
               Existing section progress was detected.
               Choose whether to resume it or clear both
               section sessions and begin a fresh full test.
@@ -220,7 +240,7 @@ function FullSatControllerPageContent() {
               <button
                 type="button"
                 onClick={resumeDetectedProgress}
-                className="rounded-xl border px-6 py-3 font-semibold hover:bg-slate-50"
+                className="rounded-xl border px-6 py-3 font-semibold hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
               >
                 Resume detected progress
               </button>
@@ -229,7 +249,7 @@ function FullSatControllerPageContent() {
             <button
               type="button"
               onClick={startFreshAttempt}
-              className="rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white hover:bg-blue-800"
+              className="rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
             >
               {hasSectionProgress
                 ? "Start fresh full test"
@@ -281,7 +301,15 @@ function FullSatControllerPageContent() {
               ? "Break complete"
               : "Take a break"}
           </h1>
-          <p className="mt-6 font-mono text-6xl font-bold">
+          <p
+            role="timer"
+            aria-live="polite"
+            aria-atomic="true"
+            aria-label={`Break time remaining: ${formatTime(
+              breakRemaining,
+            )}`}
+            className="mt-6 font-mono text-6xl font-bold"
+          >
             {formatTime(breakRemaining)}
           </p>
           <p className="mx-auto mt-6 max-w-xl leading-7 text-slate-600">
@@ -298,7 +326,7 @@ function FullSatControllerPageContent() {
                   beginFullTestMath(current),
                 )
               }
-              className="rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+              className="rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
             >
               Begin Math
             </button>
@@ -311,7 +339,7 @@ function FullSatControllerPageContent() {
                     beginFullTestMath(current),
                   )
                 }
-                className="rounded-xl border px-5 py-3 text-sm font-semibold hover:bg-slate-50"
+                className="rounded-xl border px-5 py-3 text-sm font-semibold hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
               >
                 End break early
               </button>
@@ -366,20 +394,20 @@ function FullSatControllerPageContent() {
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             href="/test/sat/results"
-            className="rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white hover:bg-blue-800"
+            className="rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
           >
             View combined SAT report
           </Link>
           <Link
             href="/test/dashboard"
-            className="rounded-xl border px-6 py-3 font-semibold hover:bg-slate-50"
+            className="rounded-xl border px-6 py-3 font-semibold hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
           >
             Open analytics
           </Link>
           <button
             type="button"
             onClick={resetControllerOnly}
-            className="rounded-xl border px-6 py-3 font-semibold hover:bg-slate-50"
+            className="rounded-xl border px-6 py-3 font-semibold hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
           >
             Return to full-test intro
           </button>
@@ -442,7 +470,7 @@ function StageSection({
       ) : (
         <Link
           href={openHref}
-          className="mt-7 inline-flex rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white hover:bg-blue-800"
+          className="mt-7 inline-flex rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
         >
           {openLabel}
         </Link>
@@ -476,16 +504,24 @@ function ProgressHeader({
   ];
 
   return (
-    <section className="rounded-2xl border bg-white p-5 shadow-sm">
-      <div className="grid gap-3 sm:grid-cols-4">
+    <nav
+      aria-label="Full SAT progress"
+      className="rounded-2xl border bg-white p-5 shadow-sm"
+    >
+      <ol className="grid gap-3 sm:grid-cols-4">
         {steps.map((step, index) => {
           const position = index + 1;
           const completed = position < active;
           const current = position === active;
 
           return (
-            <div
+            <li
               key={step}
+              aria-current={
+                current
+                  ? "step"
+                  : undefined
+              }
               className={`rounded-xl border p-4 ${
                 current
                   ? "border-blue-600 bg-blue-50"
@@ -497,14 +533,18 @@ function ProgressHeader({
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 {completed
                   ? "Complete"
-                  : `Step ${position}`}
+                  : current
+                    ? `Current step ${position}`
+                    : `Step ${position}`}
               </p>
-              <p className="mt-1 font-bold">{step}</p>
-            </div>
+              <p className="mt-1 font-bold">
+                {step}
+              </p>
+            </li>
           );
         })}
-      </div>
-    </section>
+      </ol>
+    </nav>
   );
 }
 

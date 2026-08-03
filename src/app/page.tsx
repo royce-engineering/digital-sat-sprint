@@ -5,7 +5,7 @@ import LearningCenters from "@/components/LearningCenters";
 import { satDays } from "@/content/sat";
 
 const completedDays = 0;
-const totalDays = 20;
+const totalDays = satDays.length;
 const availableWords = satDays.reduce(
   (total, lesson) => total + lesson.words.length,
   0,
@@ -33,8 +33,8 @@ export default function HomePage() {
 
             <p className="eyebrow">Digital SAT vocabulary sprint</p>
             <h1>
-              Learn 500 essential words
-              <span> in 20 focused days.</span>
+              Learn {availableWords} essential words
+              <span> in {totalDays} focused days.</span>
             </h1>
             <p className="heroText">
               Build the vocabulary needed to understand difficult passages,
@@ -131,7 +131,9 @@ export default function HomePage() {
             <span className="metricIcon metricIconBlue">↗</span>
             <div>
               <span className="metricLabel">Course progress</span>
-              <strong>{completedDays} / {totalDays} days</strong>
+              <strong>
+                {completedDays} / {totalDays} days
+              </strong>
               <small>Progress tracking arrives in Sprint 6</small>
             </div>
           </article>
@@ -167,8 +169,8 @@ export default function HomePage() {
               <p className="sectionKicker">Learning path</p>
               <h2>Your available lessons</h2>
               <p>
-                Complete each topic in order or open the lesson most relevant
-                to your current reading practice.
+                Complete each topic in order or open the lesson most relevant to
+                your current reading practice.
               </p>
             </div>
             <Link className="textLink" href="/lessons">

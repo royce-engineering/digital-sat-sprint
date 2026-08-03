@@ -23,6 +23,9 @@ import { mathExpansionPack1 } from "./mathExpansionPack1";
 import { mathExpansionPack2 } from "./mathExpansionPack2";
 import { mathExpansionPack3 } from "./mathExpansionPack3";
 import { mathExpansionPack4 } from "./mathExpansionPack4";
+import { vocabularyExpansionPack1 } from "./vocabularyExpansionPack1";
+import { vocabularyExpansionPack2 } from "./vocabularyExpansionPack2";
+import { vocabularyExpansionPack3 } from "./vocabularyExpansionPack3";
 
 // Add your existing banks to this array as additional spreads.
 const readingWritingBankBase: ExamQuestion[] = [
@@ -42,6 +45,9 @@ const readingWritingBankBase: ExamQuestion[] = [
   ...readingExpansionPack10,
   ...readingExpansionPack11,
   ...readingExpansionPack12,
+  ...vocabularyExpansionPack1,
+  ...vocabularyExpansionPack2,
+  ...vocabularyExpansionPack3,
 ];
 const readingWritingBankWithoutVerifiedDuplicates =
   retireVerifiedReadingDuplicates(readingWritingBankBase).questions;
@@ -110,4 +116,7 @@ export const bankStats = {
   mathExpansionPack3: mathExpansionPack3.length,
   mathExpansionPack4: mathExpansionPack4.length,
   rawMath: rawMathBank.length,
+  vocabularyExpansionPack1: vocabularyExpansionPack1.length,
+  vocabularyExpansionPack2: vocabularyExpansionPack2.length,
+  vocabularyExpansionPack3: vocabularyExpansionPack3.length,
 };

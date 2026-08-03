@@ -29,6 +29,7 @@ export interface FullTestState {
 export interface FullTestProgress {
   readingComplete: boolean;
   mathComplete: boolean;
+  mathStarted?: boolean;
 }
 
 export function createFullTestState(
@@ -169,6 +170,21 @@ export function reconcileFullTestState(
         (progress.readingComplete ? now : undefined),
       mathCompletedAt: state.mathCompletedAt ?? now,
       completedAt: state.completedAt ?? now,
+      updatedAt: now,
+    };
+  }
+
+  if (
+    progress.readingComplete &&
+    progress.mathStarted
+  ) {
+    return {
+      ...state,
+      phase: "math",
+      readingCompletedAt:
+        state.readingCompletedAt ?? now,
+      mathStartedAt:
+        state.mathStartedAt ?? now,
       updatedAt: now,
     };
   }
